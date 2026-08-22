@@ -1,0 +1,51 @@
+[
+  {
+    "id": "prod_tenis_x",
+    "name": "Tênis X",
+    "description": "Tênis esportivo para corrida",
+    "price": 799.9,
+    "currency": "BRL",
+    "available": true,
+    "category": "calcados",
+    "variants": [
+      {"id": "var_40", "name": "40", "available": true},
+      {"id": "var_41", "name": "41", "available": true},
+      {"id": "var_42", "name": "42", "available": true}
+    ]
+  },
+  {
+    "id": "prod_camiseta_basica",
+    "name": "Camiseta Básica",
+    "description": "Camiseta de algodão",
+    "price": 89.9,
+    "currency": "BRL",
+    "available": true,
+    "category": "roupas",
+    "variants": [
+      {"id": "var_m", "name": "M", "available": true},
+      {"id": "var_g", "name": "G", "available": true}
+    ]
+  },
+  {
+    "id": "prod_mochila_urban",
+    "name": "Mochila Urban",
+    "description": "Mochila para notebook",
+    "price": 249.0,
+    "currency": "BRL",
+    "available": true,
+    "category": "acessorios",
+    "variants": []
+  },
+  {
+    "id": "prod_jaqueta_esgotada",
+    "name": "Jaqueta Inverno",
+    "description": "Jaqueta esgotada no sandbox",
+    "price": 459.0,
+    "currency": "BRL",
+    "available": false,
+    "category": "roupas",
+    "variants": [
+      {"id": "var_p", "name": "P", "available": false}
+    ]
+  }
+]
