@@ -1,0 +1,12 @@
+[
+  {
+    "account_id": "buyer",
+    "balance": "100.00",
+    "currency": "BRL"
+  },
+  {
+    "account_id": "seller",
+    "balance": "50.00",
+    "currency": "BRL"
+  }
+]

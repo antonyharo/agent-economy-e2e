@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import json
+import os
 from abc import ABC, abstractmethod
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from agent_economy_e2e.ecommerce.checkout.models import CheckoutStatus
 from agent_economy_e2e.ecommerce.checkout.service import CheckoutService
@@ -13,6 +18,9 @@ from agent_economy_e2e.ecommerce.payment.models import (
     PaymentStatusView,
 )
 from agent_economy_e2e.ecommerce.payment.repository import PaymentRepository
+
+DEFAULT_MINI_PIX_URL = "http://127.0.0.1:8001"
+DEFAULT_RECEIVER_ACCOUNT_ID = "seller"
 
 
 class PaymentService(ABC):
@@ -34,9 +42,17 @@ class PaymentService(ABC):
     def simulate_payment(self, payment_id: str) -> PaymentStatusView:
         raise NotImplementedError
 
+    @abstractmethod
+    def mark_external_payment_paid(
+        self, payment_id: str, transaction_id: str, invoice_id: str
+    ) -> Payment:
+        raise NotImplementedError
+
 
 class SimulatedPixPaymentService(PaymentService):
-    def __init__(self, repository: PaymentRepository, checkouts: CheckoutService) -> None:
+    def __init__(
+        self, repository: PaymentRepository, checkouts: CheckoutService
+    ) -> None:
         self._repository = repository
         self._checkouts = checkouts
 
@@ -90,6 +106,16 @@ class SimulatedPixPaymentService(PaymentService):
         self._checkouts.save(checkout)
         return self._to_status(saved)
 
+    def mark_external_payment_paid(
+        self, payment_id: str, transaction_id: str, invoice_id: str
+    ) -> Payment:
+        payment = self.get_payment(payment_id)
+        if payment.transaction_id != transaction_id:
+            raise ValidationError("transaction_id does not match payment")
+        payment.invoice_id = invoice_id
+        payment.status = PaymentStatus.PAID
+        return self._repository.save(payment)
+
     def _to_instructions(self, payment: Payment) -> PaymentInstructions:
         return PaymentInstructions(
             payment_id=payment.id,
@@ -108,3 +134,59 @@ class SimulatedPixPaymentService(PaymentService):
             amount=payment.amount,
             currency=payment.currency,
         )
+
+
+class RealPixPaymentService(SimulatedPixPaymentService):
+    def __init__(
+        self,
+        repository: PaymentRepository,
+        checkouts: CheckoutService,
+        mini_pix_url: str | None = None,
+    ) -> None:
+        super().__init__(repository, checkouts)
+        self._mini_pix_url = mini_pix_url or os.environ.get(
+            "MINI_PIX_URL", DEFAULT_MINI_PIX_URL
+        )
+
+    def get_payment_instructions(self, checkout_id: str) -> PaymentInstructions:
+        checkout = self._checkouts.get_checkout(checkout_id)
+        existing = self._repository.get_by_checkout(checkout_id)
+        if existing is not None:
+            return self._to_instructions(existing)
+
+        txid = new_id("tx")
+        payload = {
+            "txid": txid,
+            "receiver_account_id": DEFAULT_RECEIVER_ACCOUNT_ID,
+            "amount": f"{checkout.total:.2f}",
+            "currency": checkout.currency,
+        }
+        charge = self._create_charge(payload)
+        payment = Payment(
+            id=new_id("pay"),
+            checkout_id=checkout.id,
+            method="pix",
+            amount=checkout.total,
+            currency=checkout.currency,
+            pix_code=charge["pix_code"],
+            transaction_id=charge["transaction_id"],
+            status=PaymentStatus.PENDING,
+        )
+        saved = self._repository.save(payment)
+        checkout.payment_id = saved.id
+        if checkout.status == CheckoutStatus.CREATED:
+            checkout.status = CheckoutStatus.PAYMENT_PENDING
+        self._checkouts.save(checkout)
+        return self._to_instructions(saved)
+
+    def _create_charge(self, payload: dict[str, Any]) -> dict[str, Any]:
+        request = Request(
+            f"{self._mini_pix_url.rstrip('/')}/charges",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urlopen(request, timeout=5) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError) as exc:
+            raise ValidationError(f"Mini Pix request failed: {exc}") from exc

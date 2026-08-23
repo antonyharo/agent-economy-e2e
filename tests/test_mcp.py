@@ -22,4 +22,5 @@ def test_mcp_tools_are_registered(tmp_path: Path) -> None:
         "get_payment_status",
         "simulate_pix_payment",
         "confirm_order",
+        "confirm_order_after_payment",
     }

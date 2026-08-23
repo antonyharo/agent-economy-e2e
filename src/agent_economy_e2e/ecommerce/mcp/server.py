@@ -20,7 +20,7 @@ class EcommerceMCP(MCPServer):
 
 def build_server(data_dir: Path | None = None) -> EcommerceMCP:
     resolved = data_dir or Path(os.environ.get("ECOMMERCE_DATA_DIR", DEFAULT_DATA_DIR))
-    app = create_app(resolved)
+    app = create_app(resolved, os.environ.get("MINI_PIX_URL", "http://127.0.0.1:8001"))
     return EcommerceMCP(app)
 
 

@@ -7,7 +7,11 @@ from agent_economy_e2e.ecommerce.checkout.service import CheckoutService
 from agent_economy_e2e.ecommerce.exceptions import ValidationError
 from agent_economy_e2e.ecommerce.ids import new_id
 from agent_economy_e2e.ecommerce.money import money
-from agent_economy_e2e.ecommerce.order.models import Order, OrderConfirmation, OrderStatus
+from agent_economy_e2e.ecommerce.order.models import (
+    Order,
+    OrderConfirmation,
+    OrderStatus,
+)
 from agent_economy_e2e.ecommerce.order.repository import OrderRepository
 from agent_economy_e2e.ecommerce.payment.models import PaymentStatus
 from agent_economy_e2e.ecommerce.payment.service import PaymentService
@@ -33,7 +37,9 @@ class OrderService:
         existing = self._repository.get_by_checkout(checkout.id)
         if existing is not None:
             if existing.payment_id != payment_id:
-                raise ValidationError("Checkout already confirmed with a different payment")
+                raise ValidationError(
+                    "Checkout already confirmed with a different payment"
+                )
             return self._to_view(existing)
 
         if payment.checkout_id != checkout.id:
@@ -66,6 +72,41 @@ class OrderService:
             self._carts.mark_checked_out(cart.id)
 
         return self._to_view(saved)
+
+    def confirm_order_after_payment(
+        self,
+        checkout_id: str,
+        payment_id: str,
+        transaction_id: str,
+        invoice_id: str,
+    ) -> OrderConfirmation:
+        if not invoice_id or not invoice_id.startswith("invoice-"):
+            raise ValidationError("invoice_id is invalid")
+        checkout = self._checkouts.get_checkout(checkout_id)
+        payment = self._payments.get_payment(payment_id)
+        if payment.checkout_id != checkout.id:
+            raise ValidationError("payment_id does not belong to the given checkout")
+        if payment.transaction_id != transaction_id:
+            raise ValidationError("transaction_id does not match payment")
+        if money(payment.amount) != money(checkout.total):
+            raise ValidationError("Paid amount does not match checkout total")
+
+        existing = self._repository.get_by_checkout(checkout.id)
+        if existing is not None:
+            if (
+                existing.payment_id != payment_id
+                or payment.invoice_id != invoice_id
+                or payment.transaction_id != transaction_id
+            ):
+                raise ValidationError(
+                    "Checkout already confirmed with different payment data"
+                )
+            return self._to_view(existing)
+
+        self._payments.mark_external_payment_paid(
+            payment_id, transaction_id, invoice_id
+        )
+        return self.confirm_order(checkout_id, payment_id)
 
     def _to_view(self, order: Order) -> OrderConfirmation:
         return OrderConfirmation(

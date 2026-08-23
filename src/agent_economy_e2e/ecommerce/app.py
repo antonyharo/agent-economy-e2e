@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from agent_economy_e2e.ecommerce.cart.repository import CartRepository
@@ -13,7 +14,11 @@ from agent_economy_e2e.ecommerce.database.seed import ensure_seed_data
 from agent_economy_e2e.ecommerce.order.repository import OrderRepository
 from agent_economy_e2e.ecommerce.order.service import OrderService
 from agent_economy_e2e.ecommerce.payment.repository import PaymentRepository
-from agent_economy_e2e.ecommerce.payment.service import PaymentService, SimulatedPixPaymentService
+from agent_economy_e2e.ecommerce.payment.service import (
+    PaymentService,
+    RealPixPaymentService,
+    SimulatedPixPaymentService,
+)
 
 
 class EcommerceApp:
@@ -32,13 +37,19 @@ class EcommerceApp:
         self.order = order
 
 
-def create_app(data_dir: Path) -> EcommerceApp:
+def create_app(data_dir: Path, mini_pix_url: str | None = None) -> EcommerceApp:
     ensure_seed_data(data_dir)
     store = JsonStore(data_dir)
     catalog = CatalogService(CatalogRepository(store))
     cart = CartService(CartRepository(store), catalog)
     checkout = CheckoutService(CheckoutRepository(store), cart)
-    payment: PaymentService = SimulatedPixPaymentService(PaymentRepository(store), checkout)
+    payment_repository = PaymentRepository(store)
+    resolved_mini_pix_url = mini_pix_url or os.environ.get("MINI_PIX_URL")
+    payment: PaymentService = (
+        RealPixPaymentService(payment_repository, checkout, resolved_mini_pix_url)
+        if resolved_mini_pix_url
+        else SimulatedPixPaymentService(payment_repository, checkout)
+    )
     order = OrderService(OrderRepository(store), checkout, payment, cart)
     return EcommerceApp(
         catalog=catalog,
@@ -47,3 +58,9 @@ def create_app(data_dir: Path) -> EcommerceApp:
         payment=payment,
         order=order,
     )
+
+
+def create_financial_app(
+    data_dir: Path, mini_pix_url: str | None = None
+) -> EcommerceApp:
+    return create_app(data_dir, mini_pix_url or "http://127.0.0.1:8001")

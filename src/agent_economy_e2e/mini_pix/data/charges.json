@@ -1,0 +1,11 @@
+[
+  {
+    "pix_code": "PIX-TEST-SELLER-25",
+    "charge_id": "charge-test-1",
+    "transaction_id": "tx-test-1",
+    "receiver_account_id": "seller",
+    "amount": "25.00",
+    "currency": "BRL",
+    "status": "PENDING"
+  }
+]

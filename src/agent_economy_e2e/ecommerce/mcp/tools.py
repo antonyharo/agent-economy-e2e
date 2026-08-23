@@ -70,7 +70,9 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
     ) -> dict[str, Any]:
         """Add an available catalog product to the active cart."""
         return _dump(
-            app.cart.add_to_cart(product_id=product_id, quantity=quantity, variant_id=variant_id)
+            app.cart.add_to_cart(
+                product_id=product_id, quantity=quantity, variant_id=variant_id
+            )
         )
 
     @mcp.tool()
@@ -92,7 +94,9 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
         variant_id: str | None = None,
     ) -> dict[str, Any]:
         """Remove an item from the active cart."""
-        return _dump(app.cart.remove_from_cart(product_id=product_id, variant_id=variant_id))
+        return _dump(
+            app.cart.remove_from_cart(product_id=product_id, variant_id=variant_id)
+        )
 
     @mcp.tool()
     def clear_cart() -> dict[str, Any]:
@@ -125,7 +129,7 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
 
     @mcp.tool()
     def get_payment_instructions(checkout_id: str) -> dict[str, Any]:
-        """Return simulated PIX instructions for a checkout. Amount comes from the checkout."""
+        """Create or return real Mini Pix instructions for a checkout."""
         return _dump(app.payment.get_payment_instructions(checkout_id))
 
     @mcp.tool()
@@ -141,4 +145,23 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
     @mcp.tool()
     def confirm_order(checkout_id: str, payment_id: str) -> dict[str, Any]:
         """Confirm an order only when the sandbox payment is paid and matches the checkout."""
-        return _dump(app.order.confirm_order(checkout_id=checkout_id, payment_id=payment_id))
+        return _dump(
+            app.order.confirm_order(checkout_id=checkout_id, payment_id=payment_id)
+        )
+
+    @mcp.tool()
+    def confirm_order_after_payment(
+        checkout_id: str,
+        payment_id: str,
+        transaction_id: str,
+        invoice_id: str,
+    ) -> dict[str, Any]:
+        """Confirm an order using identifiers returned by the external payment gateway."""
+        return _dump(
+            app.order.confirm_order_after_payment(
+                checkout_id=checkout_id,
+                payment_id=payment_id,
+                transaction_id=transaction_id,
+                invoice_id=invoice_id,
+            )
+        )

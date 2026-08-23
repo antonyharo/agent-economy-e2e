@@ -5,8 +5,10 @@ description = "Agent-ready ecommerce MCP sandbox"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.115.0",
     "mcp[cli]>=2.0.0",
     "pydantic>=2.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
@@ -16,6 +18,7 @@ dev = [
 
 [project.scripts]
 ecommerce-mcp = "agent_economy_e2e.ecommerce.mcp.server:main"
+payment-gateway-mcp = "agent_economy_e2e.payment_gateway.server:main"
 app = "agent_economy_e2e.ecommerce.mcp.server:main"
 
 [build-system]
