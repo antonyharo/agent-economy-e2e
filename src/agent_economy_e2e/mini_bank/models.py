@@ -38,3 +38,11 @@ class PixPayment(BaseModel):
     currency: Literal["BRL"] = "BRL"
 
     _validate_amount = field_validator("amount")(positive_amount)
+
+
+class CreateChargeRequest(BaseModel):
+    receiver_account_id: str = Field(min_length=1)
+    amount: Decimal
+    currency: Literal["BRL"] = "BRL"
+
+    _validate_amount = field_validator("amount")(positive_amount)

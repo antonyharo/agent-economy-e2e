@@ -3,6 +3,7 @@ import threading
 import time
 from decimal import Decimal
 from pathlib import Path
+from uuid import UUID
 
 import uvicorn
 from fastapi.testclient import TestClient
@@ -52,6 +53,31 @@ def test_mini_pix_charge_resolution_completion_and_invoice(tmp_path: Path) -> No
         generate_invoice("tx-1", tmp_path).invoice_id
         == generate_invoice("tx-1", tmp_path).invoice_id
     )
+
+
+def test_mini_bank_creates_mini_pix_charge_with_uuid_txid(tmp_path: Path) -> None:
+    pix_port = _free_port()
+    pix_server, pix_thread = _start_http(create_pix_app(tmp_path / "pix"), pix_port)
+    try:
+        bank = create_bank_app(tmp_path / "bank", f"http://127.0.0.1:{pix_port}")
+        response = TestClient(bank).post(
+            "/charges",
+            json={"receiver_account_id": "seller", "amount": "25.00"},
+        )
+
+        assert response.status_code == 200
+        charge = response.json()
+        assert charge["receiver_account_id"] == "seller"
+        assert charge["amount"] == "25.00"
+        assert charge["transaction_id"]
+        assert UUID(charge["transaction_id"])
+        assert (
+            resolve_pix_code(charge["pix_code"], tmp_path / "pix").transaction_id
+            == charge["transaction_id"]
+        )
+    finally:
+        pix_server.should_exit = True
+        pix_thread.join(timeout=5)
 
 
 def test_mini_bank_balance_debit_credit_and_insufficient_balance(

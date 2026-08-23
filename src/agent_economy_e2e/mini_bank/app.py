@@ -7,10 +7,17 @@ from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 
-from .models import Account, AccountOperation, BalanceResponse, PixPayment
+from .models import (
+    Account,
+    AccountOperation,
+    BalanceResponse,
+    CreateChargeRequest,
+    PixPayment,
+)
 
 DEFAULT_DATA_DIR = Path(__file__).parent / "data"
 DEFAULT_PIX_URL = "http://127.0.0.1:8001"
@@ -133,6 +140,23 @@ def _pix_request(base_url: str, endpoint: str, body: dict[str, Any]) -> dict[str
         raise ValueError(f"Mini Pix request failed: {exc}") from exc
 
 
+def create_pix_charge(
+    receiver_account_id: str,
+    amount: Decimal,
+    pix_url: str | None = None,
+) -> dict[str, Any]:
+    base_url = pix_url or os.environ.get("MINI_PIX_URL", DEFAULT_PIX_URL)
+    return _pix_request(
+        base_url,
+        "/charges",
+        {
+            "txid": str(uuid4()),
+            "receiver_account_id": receiver_account_id,
+            "amount": amount,
+        },
+    )
+
+
 def pay_pix(
     pix_code: str,
     payer_account_id: str,
@@ -208,6 +232,17 @@ def create_app(data_dir: Path | None = None, pix_url: str | None = None) -> Fast
             )
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @api.post("/charges")
+    def charge(request: CreateChargeRequest) -> dict[str, Any]:
+        try:
+            return create_pix_charge(
+                request.receiver_account_id,
+                request.amount,
+                pix_url,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @api.post("/payments/pix")
     def payment(request: PixPayment) -> dict[str, Any]:
