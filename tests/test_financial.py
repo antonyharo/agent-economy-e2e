@@ -5,6 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
 
+import pytest
 import uvicorn
 from fastapi.testclient import TestClient
 
@@ -143,6 +144,33 @@ def test_payment_flow_uses_mini_bank_and_mini_pix_over_http(tmp_path: Path) -> N
         assert retry_invoice["invoice_id"] == invoice["invoice_id"]
         assert check_balance("buyer", bank_dir).balance == Decimal("75.00")
         assert check_balance("seller", bank_dir).balance == Decimal("75.00")
+    finally:
+        bank_server.should_exit = True
+        pix_server.should_exit = True
+        bank_thread.join(timeout=5)
+        pix_thread.join(timeout=5)
+
+
+def test_gateway_propagates_payment_decline_reason(tmp_path: Path) -> None:
+    pix_dir = tmp_path / "pix"
+    bank_dir = tmp_path / "bank"
+    charge = create_charge("tx-declined", "seller", Decimal("101.00"), pix_dir)
+    pix_port = _free_port()
+    bank_port = _free_port()
+    pix_server, pix_thread = _start_http(create_pix_app(pix_dir), pix_port)
+    bank_server, bank_thread = _start_http(
+        create_bank_app(bank_dir, f"http://127.0.0.1:{pix_port}"), bank_port
+    )
+    try:
+        with pytest.raises(ValueError, match="Compra recusada: saldo insuficiente"):
+            authorize_payment(
+                "buyer",
+                charge.pix_code,
+                Decimal("101.00"),
+                "checkout-declined",
+                f"http://127.0.0.1:{bank_port}",
+            )
+        assert resolve_pix_code(charge.pix_code, pix_dir).status == "FAILED"
     finally:
         bank_server.should_exit = True
         pix_server.should_exit = True

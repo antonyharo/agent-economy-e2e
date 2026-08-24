@@ -141,10 +141,29 @@ def _tool_output(result: Any) -> dict[str, Any]:
             try:
                 decoded = json.loads(text)
             except json.JSONDecodeError:
-                decoded = ast.literal_eval(text)
+                try:
+                    decoded = ast.literal_eval(text)
+                except (SyntaxError, ValueError):
+                    raise RuntimeError(str(text)) from None
             if isinstance(decoded, dict):
                 return decoded
+            raise RuntimeError(str(text))
     raise RuntimeError(f"Unexpected MCP result: {result!r}")
+
+
+def _tool_error(result: Any) -> str:
+    for item in getattr(result, "content", []):
+        text = getattr(item, "text", None)
+        if text:
+            return str(text)
+    return "MCP tool failed without a message"
+
+
+def _exception_message(error: BaseException) -> str:
+    if isinstance(error, BaseExceptionGroup):
+        messages = [_exception_message(item) for item in error.exceptions]
+        return "; ".join(message for message in messages if message)
+    return str(error)
 
 
 async def _call_tool(
@@ -161,9 +180,18 @@ async def _call_tool(
     logger.write(f"TOOL REQUEST {server_name}.{tool_name} {_json(arguments)}")
     result = await session.call_tool(tool_name, arguments)
     if getattr(result, "isError", False):
-        logger.write(f"TOOL ERROR {server_name}.{tool_name} {_json(result)}")
-        raise RuntimeError(f"MCP tool failed: {server_name}.{tool_name}")
-    output = _tool_output(result)
+        message = _tool_error(result)
+        logger.write(
+            f"TOOL ERROR {server_name}.{tool_name} {_json({'message': message})}"
+        )
+        raise RuntimeError(message)
+    try:
+        output = _tool_output(result)
+    except RuntimeError as exc:
+        logger.write(
+            f"TOOL ERROR {server_name}.{tool_name} {_json({'message': str(exc)})}"
+        )
+        raise
     logger.write(f"TOOL OUTPUT {server_name}.{tool_name} {_json(output)}")
     return output
 
@@ -349,8 +377,9 @@ async def run(log_path: Path) -> dict[str, Any]:
                 logger.write(f"E2E COMPLETE {_json(output)}")
                 return output
     except Exception as exc:
-        logger.write(f"E2E ERROR {type(exc).__name__}: {exc}")
-        raise
+        message = _exception_message(exc)
+        logger.write(f"E2E ERROR {type(exc).__name__}: {message}")
+        raise RuntimeError(message) from None
     finally:
         for name, process in reversed(processes):
             logger.write(f"PROCESS STOP {name}")
@@ -372,7 +401,12 @@ def main() -> None:
         "--log", type=Path, default=DEFAULT_LOG, help="Arquivo de log do fluxo."
     )
     args = parser.parse_args()
-    result = asyncio.run(run(args.log.resolve()))
+    try:
+        result = asyncio.run(run(args.log.resolve()))
+    except RuntimeError as exc:
+        print(f"Fluxo E2E falhou: {exc}", file=sys.stderr)
+        print(f"Log: {args.log.resolve()}", file=sys.stderr)
+        raise SystemExit(1) from None
     print(f"Fluxo E2E concluido: order_id={result['order']['order_id']}")
     print(f"Log: {args.log.resolve()}")
 

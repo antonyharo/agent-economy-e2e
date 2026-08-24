@@ -16,5 +16,23 @@
     "amount": "819.90",
     "currency": "BRL",
     "status": "COMPLETED"
+  },
+  {
+    "pix_code": "PIX-DDE7B9568E9E48AB",
+    "charge_id": "charge-4f0b4ebef02a",
+    "transaction_id": "dcd30fa8-8d07-414a-ac5a-d7937e7a4fa0",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "FAILED"
+  },
+  {
+    "pix_code": "PIX-744577190B744690",
+    "charge_id": "charge-01480a334959",
+    "transaction_id": "c9f5e2a9-6205-440a-ab91-5d2be8d2d490",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]

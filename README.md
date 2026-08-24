@@ -199,3 +199,7 @@ uv run pytest
 ```
 
 Os testes cobrem catálogo, carrinho, checkout, pagamento, pedidos, integração financeira e registro das tools MCP.
+
+## Dashboard Streamlit
+
+Execute `uv run streamlit run src/agent_economy_e2e/app.py` e use **Executar teste E2E** na barra lateral. A linha do tempo e os painéis são atualizados enquanto o runner avança pelas etapas; os dados continuam disponíveis em `data/`.

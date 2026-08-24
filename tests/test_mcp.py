@@ -1,7 +1,11 @@
 import asyncio
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from agent_economy_e2e.ecommerce.mcp.server import build_server
+from run import _tool_output
 
 
 def test_mcp_tools_are_registered(tmp_path: Path) -> None:
@@ -21,3 +25,20 @@ def test_mcp_tools_are_registered(tmp_path: Path) -> None:
         "get_payment_instructions",
         "confirm_order",
     }
+
+
+def test_tool_output_preserves_textual_mcp_error() -> None:
+    result = SimpleNamespace(
+        structuredContent=None,
+        content=[
+            SimpleNamespace(
+                text="Error executing tool create_cart: An active cart already exists"
+            )
+        ],
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Error executing tool create_cart: An active cart already exists",
+    ):
+        _tool_output(result)

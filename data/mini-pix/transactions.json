@@ -8,5 +8,15 @@
     "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
     "currency": "BRL",
     "status": "COMPLETED"
+  },
+  {
+    "transaction_id": "dcd30fa8-8d07-414a-ac5a-d7937e7a4fa0",
+    "currency": "BRL",
+    "status": "FAILED"
+  },
+  {
+    "transaction_id": "c9f5e2a9-6205-440a-ab91-5d2be8d2d490",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]
