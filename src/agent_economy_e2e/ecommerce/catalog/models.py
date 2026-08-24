@@ -33,6 +33,7 @@ class ProductSummary(BaseModel):
     price: float
     currency: str
     available: bool
+    category: str
     variants: list[ProductVariant]
 
 

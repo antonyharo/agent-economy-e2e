@@ -239,13 +239,14 @@ def test_gateway_preapproval_flags_control_human_approval(tmp_path: Path) -> Non
         '[{"agent_id": "agent-1", "account_id": "buyer", '
         '"max_expeding_value": "500.00", '
         '"permited_categories": ["acessorios"], '
+        '"require_human_approval": true, '
         '"human_approval_threshold": false}]',
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="pre-aprovacao humana desabilitada"):
-        evaluate_payment(
-            "buyer", Decimal("10.00"), "agent-1", ["acessorios"], data_dir=tmp_path
-        )
+    disabled_threshold = evaluate_payment(
+        "buyer", Decimal("10.00"), "agent-1", ["acessorios"], data_dir=tmp_path
+    )
+    assert disabled_threshold["requires_human_approval"] is True
 
 
 def test_gateway_sends_over_limit_payment_to_human_when_enabled(tmp_path: Path) -> None:

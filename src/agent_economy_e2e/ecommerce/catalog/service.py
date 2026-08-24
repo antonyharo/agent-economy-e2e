@@ -61,6 +61,7 @@ class CatalogService:
                     price=p.price,
                     currency=p.currency,
                     available=p.available,
+                    category=p.category,
                     variants=p.variants,
                 )
                 for p in page

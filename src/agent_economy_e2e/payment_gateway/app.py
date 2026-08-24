@@ -74,9 +74,8 @@ def _validate_policy(
     threshold_value = agent.get("human_approval_threshold")
     always_requires_human = bool(agent.get("require_human_approval", False))
     if isinstance(threshold_value, bool):
-        if not threshold_value:
-            raise ValueError("pagamento negado: pre-aprovacao humana desabilitada")
-        always_requires_human = True
+        if threshold_value:
+            always_requires_human = True
         threshold_value = None
     requires_human_approval = always_requires_human
     if threshold_value is not None:

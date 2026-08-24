@@ -9,6 +9,7 @@ def test_search_products(app: EcommerceApp) -> None:
     assert product.price == 799.9
     assert product.currency == "BRL"
     assert product.available is True
+    assert product.category == "calcados"
     assert product.variants
 
 

@@ -46,5 +46,53 @@
     },
     "total": 819.9,
     "currency": "BRL"
+  },
+  {
+    "id": "ord_b09a829ba30b",
+    "checkout_id": "chk_90e1ac391fa0",
+    "payment_id": "pay_47dc1a85f042",
+    "status": "confirmed",
+    "items": [
+      {
+        "product_id": "prod_mochila_urban",
+        "variant_id": null,
+        "unit_price": 249.0,
+        "quantity": 2
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "total": 518.0,
+    "currency": "BRL"
+  },
+  {
+    "id": "ord_772484491e4e",
+    "checkout_id": "chk_197b6a08d71a",
+    "payment_id": "pay_f8792afd62e8",
+    "status": "confirmed",
+    "items": [
+      {
+        "product_id": "prod_mochila_urban",
+        "variant_id": null,
+        "unit_price": 249.0,
+        "quantity": 2
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "total": 518.0,
+    "currency": "BRL"
   }
 ]

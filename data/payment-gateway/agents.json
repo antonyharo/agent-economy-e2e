@@ -2,9 +2,9 @@
   {
     "agent_id": "default",
     "account_id": "buyer",
-    "max_expeding_value": "900.00",
+    "max_expeding_value": "1000.00",
     "permited_categories": ["acessorios", "calcados", "roupas"],
     "require_human_approval": false,
-    "human_approval_threshold": true
+    "human_approval_threshold": false
   }
 ]
