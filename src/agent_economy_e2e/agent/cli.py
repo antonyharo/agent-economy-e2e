@@ -12,6 +12,7 @@ close_mcp_tools = _main.close_mcp_tools
 async def run(*args, **kwargs):
     original_build_graph = _main.build_graph
     original_close_mcp_tools = _main.close_mcp_tools
+
     async def build_graph_for_legacy_run(observer=None):
         return await build_graph()
 

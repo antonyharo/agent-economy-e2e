@@ -1,8 +1,16 @@
-# Ecommerce MCP sandbox
+# Agent Economy E2E Sandbox
 
-Sandbox de ecommerce orientado a agentes, implementado em Python. A aplicação expõe operações de catálogo, carrinho, checkout, cobrança PIX e confirmação de pedido através de MCP. A persistência é feita em arquivos JSON e não há autenticação nem frontend.
+Sandbox de ecommerce orientado a agentes, implementado em Python. O objetivo é
+demonstrar uma compra completa entre agentes e serviços MCP, incluindo catálogo,
+carrinho, checkout, políticas de pagamento, débito PIX e confirmação do pedido.
+O fluxo principal apresenta no terminal, com Rich, o que cada componente está
+fazendo e os dados essenciais de cada etapa.
 
-O projeto também inclui uma infraestrutura financeira local composta por Mini Bank, Mini Pix e Payment Gateway.
+O projeto inclui uma infraestrutura financeira local composta por Mini Bank,
+Mini Pix e Payment Gateway. A persistência é feita em arquivos JSON.
+
+A especificação resumida dos componentes, contratos e fluxos está em
+[architecture.md](architecture.md).
 
 ## Requisitos
 
@@ -66,9 +74,68 @@ O Payment Gateway MCP registra duas tools:
 
 O método de pagamento aceito pelo checkout MCP é `pix`.
 
-## Modo 1: servidor Ecommerce MCP
+## Modos de execução
 
-Inicie o servidor via entry point:
+### 1. Demonstração do sandbox
+
+Esse é o fluxo principal e o único entrypoint da aplicação. O `main.py` inicia
+os clientes dos MCPs Ecommerce e Payment Gateway, configura o agente LangGraph
+e executa a compra com logs Rich no terminal.
+
+Antes de executar, inicie a infraestrutura financeira com Docker Compose:
+
+```bash
+docker compose up --build -d
+```
+
+Depois execute um pedido:
+
+```bash
+uv run app "Compre um Tenis X tamanho 42"
+```
+
+Também é possível executar o mesmo entrypoint pelo módulo Python:
+
+```bash
+uv run python -m agent_economy_e2e "quero comprar 2 mochilas urban e 2 tenis x"
+```
+
+O agente usa, por padrão, a conta `buyer`, o endereço de teste e o modelo
+Ollama `qwen3:1.7b`. O modelo precisa estar instalado e o Ollama em execução:
+
+```bash
+ollama serve
+ollama pull qwen3:1.7b
+```
+
+Opções disponíveis:
+
+```bash
+uv run app "Compre um Tenis X" --payer-account-id buyer
+uv run app "Compre um Tenis X" --agent-id default
+uv run app "Compre um Tenis X" --address '{"street":"Rua A","number":"10","city":"Sao Paulo","state":"SP","postal_code":"01000-000","country":"BR"}'
+```
+
+O fluxo executado é:
+
+```text
+pedido do usuario
+ -> planejamento pelo agente
+ -> busca de produtos
+ -> carrinho
+ -> calculo de subtotal, frete e total
+ -> checkout
+ -> cobranca Mini Pix
+ -> avaliacao do Payment Gateway
+ -> aprovacao humana, quando exigida
+ -> debito no Mini Bank
+ -> confirmacao do pedido
+```
+
+### 2. Servidor Ecommerce MCP isolado
+
+Use este modo para conectar um cliente MCP diretamente ao domínio de ecommerce,
+sem executar o agente de compra:
 
 ```bash
 uv run ecommerce-mcp
@@ -90,7 +157,7 @@ Exemplo de configuração para um cliente MCP:
 }
 ```
 
-## Modo 2: infraestrutura financeira manual
+### 3. Infraestrutura financeira manual
 
 A infraestrutura financeira possui três processos:
 
@@ -114,39 +181,23 @@ Por padrão:
 
 O Mini Bank movimenta saldos em BRL. O Mini Pix administra cobranças, transações e invoices, mas não altera saldos. O Gateway valida a solicitação e encaminha o pagamento ao Mini Bank.
 
-## Modo 3: fluxo E2E automatizado
+Use este modo quando os serviços financeiros precisarem ser executados fora do
+Docker Compose, em terminais separados:
 
-O runner [src/run.py](src/run.py) inicia automaticamente Mini Pix, Mini Bank, Ecommerce MCP e Payment Gateway MCP. Em seguida executa:
+### 4. Docker Compose
 
-```text
-search_products
- -> get_cart / create_cart
- -> revisar carrinho (continuar, alterar quantidade, remover ou limpar)
- -> add_to_cart
- -> calculate_cart
- -> create_checkout
- -> get_payment_instructions
- -> evaluate_payment
- -> aprovação humana (quando exigida pela política)
- -> authorize_payment
- -> confirm_order
-```
-
-Execute a partir da raiz do projeto:
+Suba o Mini Pix e o Mini Bank com os dados persistidos na raiz do projeto:
 
 ```bash
-uv run python src/run.py
+docker compose up --build -d
 ```
 
-O runner escolhe portas livres e usa os dados persistidos em `data/`, com saldo suficiente para o comprador na primeira execução.
-
-Por padrão, cada execução grava um log detalhado em `e2e_run.log`. É possível escolher outro arquivo:
+As APIs ficam disponíveis em `http://localhost:8001` (Mini Pix) e
+`http://localhost:8000` (Mini Bank). Para parar os containers:
 
 ```bash
-uv run python src/run.py --log logs/meu-fluxo.txt
+docker compose down
 ```
-
-O log contém timestamps, descrições das ações, requisições e respostas MCP, requisições e respostas HTTP, erros e ciclo de vida dos processos.
 
 ## Configuração
 
@@ -159,7 +210,8 @@ O log contém timestamps, descrições das ações, requisições e respostas MC
 | `MINI_PIX_URL`             | URL financeira usada pelos serviços.         | `http://127.0.0.1:8001` |
 | `PAYMENT_GATEWAY_DATA_DIR` | Diretório do cadastro de agentes do Gateway. | `data/payment-gateway`  |
 
-No runner, a configuração é montada automaticamente por processo. Devido ao contrato atual do Ecommerce MCP, `MINI_PIX_URL` recebe a URL do Mini Bank nesse processo para que `confirm_order` consiga consultar a cobrança reconciliada. Em execução manual, mantenha essa mesma ligação entre Ecommerce MCP e Mini Bank.
+Na execução manual, mantenha `MINI_BANK_URL` apontando para o Mini Bank e
+`MINI_PIX_URL` apontando para o Mini Pix nos serviços correspondentes.
 
 ## Persistência
 
@@ -169,7 +221,8 @@ O Mini Bank grava `accounts.json` em `data/mini-bank`, e o Mini Pix grava `charg
 
 O Payment Gateway grava `agents.json` em `data/payment-gateway`. Cada registro contém `agent_id`, `account_id`, `max_expeding_value`, `permited_categories`, `require_human_approval` e `human_approval_threshold`. Quando `require_human_approval` é `true`, toda compra exige aprovação humana. `human_approval_threshold` aceita um valor numérico para exigir aprovação acima desse valor, `true` para encaminhar toda compra ao humano e `false` para bloquear a compra por padrão. Quando a compra excede `max_expeding_value` e a aprovação humana está habilitada, o gateway solicita uma exceção ao humano; com aprovação, a transação pode prosseguir. `null` mantém o comportamento automático legado, desde que as demais regras sejam válidas. A aprovação humana recebe uma pergunta explícita de sim/não, itens, total, método, PIX, motivo e o objeto completo do checkout. Antes de encaminhar um PIX ao Mini Bank, o Gateway confirma a associação agente-conta, o limite do pagamento e as categorias permitidas.
 
-No runner E2E, esses arquivos permanecem no workspace entre execuções. O log continua sendo gravado em `e2e_run.log`, salvo quando outro caminho é informado com `--log`.
+Esses arquivos permanecem no workspace entre execuções. Para uma demonstração
+repetível, use diretórios de dados limpos ou restaure os JSONs de exemplo.
 
 ## Fluxo financeiro
 
@@ -202,27 +255,7 @@ uv run pytest
 
 Os testes cobrem catálogo, carrinho, checkout, pagamento, pedidos, integração financeira e registro das tools MCP.
 
-## Dashboard Streamlit
-
-Execute `uv run streamlit run src/agent_economy_e2e/app.py` e use **Executar teste E2E** na barra lateral. A linha do tempo e os painéis são atualizados enquanto o runner avança pelas etapas; os dados continuam disponíveis em `data/`.
-
-## APIs com Docker Compose
-
-Suba o Mini Pix e o Mini Bank com os dados persistidos na raiz do projeto:
-
-```bash
-docker compose up --build -d
-```
-
-As APIs ficam disponíveis em `http://localhost:8001` (Mini Pix) e
-`http://localhost:8000` (Mini Bank). Os arquivos são gravados em
-`data/mini-pix` e `data/mini-bank`, respectivamente. Para parar os containers:
-
-```bash
-docker compose down
-```
-
-## Entrypoint do sandbox: agente LangGraph com Ollama
+## Agente e políticas de pagamento
 
 O pacote `agent_economy_e2e.agent` implementa o fluxo de compra com LangGraph. O
 LLM interpreta o pedido, enquanto o grafo controla a ordem das tools MCP e pausa
@@ -230,30 +263,13 @@ antes do débito PIX para aprovação explícita. Quando já existe um carrinho 
 com itens, o agente também pausa para permitir continuar, alterar quantidades,
 remover itens ou limpar o carrinho antes de adicionar a nova compra.
 
-Com Mini Pix e Mini Bank em execução, use:
-
-```bash
-uv run purchase-agent "Compre um Tenis X tamanho 42"
-```
-
-Por padrão, o agente usa o Ollama local com o modelo `qwen3:1.7b`, a conta `buyer`
-e o endereço de teste. O modelo precisa estar instalado e o Ollama precisa estar
-rodando:
-
-```bash
-ollama serve
-ollama pull qwen3:1.7b
-```
-
-Exemplos de pedidos com um ou vários produtos:
-
-```bash
-uv run purchase-agent "compre 1 tenis x"
-uv run purchase-agent "quero comprar 2 mochilas urban e 2 tenis x"
-```
+O pacote `agent_economy_e2e.agent` contém a configuração do agente e o grafo
+LangGraph. A execução e a apresentação ficam em `agent_economy_e2e.main`.
 
 O agente pesquisa cada produto no Ecommerce MCP, monta o carrinho, cria o
 checkout, chama o Payment Gateway MCP e pausa para aprovação antes do débito
-PIX. Para outra conta ou endereço, informe `--payer-account-id` e `--address`
-como JSON. É possível trocar o modelo e a URL com `OLLAMA_MODEL` e
-`OLLAMA_BASE_URL`.
+PIX. O Gateway valida a associação agente-conta, o limite, as categorias e as
+regras de aprovação humana. O pedido só é confirmado depois que o pagamento
+pertencente ao checkout é reconciliado.
+
+É possível trocar o modelo e a URL com `OLLAMA_MODEL` e `OLLAMA_BASE_URL`.

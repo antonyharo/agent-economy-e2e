@@ -1026,5 +1026,27 @@
     "status": "payment_pending",
     "payment_id": "pay_0324f4858d27",
     "order_id": null
+  },
+  {
+    "id": "chk_37c86b55fa3d",
+    "cart_id": "cart_26d6fa232d22",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "unit_price": 799.9,
+        "quantity": 1
+      }
+    ],
+    "shipping_option": "standard",
+    "payment_method": "pix",
+    "subtotal": 799.9,
+    "shipping": 20.0,
+    "discount": 0.0,
+    "total": 819.9,
+    "currency": "BRL",
+    "status": "payment_pending",
+    "payment_id": "pay_11e020be62dc",
+    "order_id": null
   }
 ]

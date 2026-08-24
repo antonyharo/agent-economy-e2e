@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from agent_economy_e2e.agent.mcp import MCPTool
 from agent_economy_e2e.ecommerce.mcp.server import build_server
-from run import _tool_output
 
 
 def test_mcp_tools_are_registered(tmp_path: Path) -> None:
@@ -37,8 +37,12 @@ def test_tool_output_preserves_textual_mcp_error() -> None:
         ],
     )
 
+    class FakeSession:
+        async def call_tool(self, name: str, arguments: dict) -> object:
+            return result
+
     with pytest.raises(
         RuntimeError,
         match="Error executing tool create_cart: An active cart already exists",
     ):
-        _tool_output(result)
+        asyncio.run(MCPTool(FakeSession(), "create_cart").ainvoke({}))

@@ -90,7 +90,7 @@
     ]
   },
   {
-    "id": "cart_9862246ef82d",
+    "id": "cart_26d6fa232d22",
     "agent_id": "default",
     "status": "active",
     "items": [
@@ -99,7 +99,7 @@
         "variant_id": "var_42",
         "name": "Tênis X",
         "unit_price": 799.9,
-        "quantity": 4,
+        "quantity": 1,
         "currency": "BRL"
       }
     ]

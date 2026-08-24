@@ -36,7 +36,11 @@ class DemoUI:
     def _money(value: Any) -> str:
         if value is None:
             return "n/d"
-        return f"R$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return (
+            f"R$ {float(value):,.2f}".replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
 
     @staticmethod
     def _address(value: dict[str, Any]) -> str:
@@ -58,7 +62,9 @@ class DemoUI:
 
     def chat(self, message: str, title: str = "Agente") -> None:
         self.console.print(
-            Panel(message, title=f"[bold green]{title}[/bold green]", border_style="green")
+            Panel(
+                message, title=f"[bold green]{title}[/bold green]", border_style="green"
+            )
         )
 
     def mcp_event(
@@ -114,9 +120,13 @@ class DemoUI:
             )
         elif tool == "evaluate_payment":
             if result.get("requires_human_approval"):
-                self.console.print("[yellow]•[/yellow] Gateway solicitou aprovação humana.")
+                self.console.print(
+                    "[yellow]•[/yellow] Gateway solicitou aprovação humana."
+                )
             else:
-                self.console.print("[green]•[/green] Gateway aprovou automaticamente a política.")
+                self.console.print(
+                    "[green]•[/green] Gateway aprovou automaticamente a política."
+                )
         elif tool == "authorize_payment":
             self.console.print(
                 f"[green]✓[/green] Mini Bank debitou [bold]{self._money(result.get('amount'))}[/bold]; "
@@ -205,7 +215,12 @@ async def run(
             reason = interruption.value.get("reason", "")
             if reason:
                 ui.console.print(f"[dim]Motivo: {reason}[/dim]")
-            decision = Prompt.ask("Deseja aprovar este pagamento?", choices=["s", "n"], default="n") == "s"
+            decision = (
+                Prompt.ask(
+                    "Deseja aprovar este pagamento?", choices=["s", "n"], default="n"
+                )
+                == "s"
+            )
             result = await graph.ainvoke(Command(resume=decision), config)
         if result.get("payment"):
             payment = result["payment"]
@@ -243,7 +258,9 @@ def main() -> None:
         run(args.request, args.payer_account_id, args.address, args.agent_id)
     )
     ui = DemoUI()
-    ui.console.print(Panel(JSON.from_data(result), title="Resultado", border_style="cyan"))
+    ui.console.print(
+        Panel(JSON.from_data(result), title="Resultado", border_style="cyan")
+    )
 
 
 if __name__ == "__main__":

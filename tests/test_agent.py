@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from agent_economy_e2e.agent import cli
+from agent_economy_e2e import main
 from agent_economy_e2e.agent.graph import (
     PurchaseState,
     _after_authorize_payment,
@@ -163,7 +163,7 @@ def test_add_to_cart_adds_each_planned_product() -> None:
 
 
 def test_public_payment_messages_are_compact() -> None:
-    approval = cli._approval_message(
+    approval = main._approval_message(
         {
             "checkout_id": "chk-123",
             "items": [{"name": "Tenis X", "quantity": 1, "unit_price": 799.9}],
@@ -182,7 +182,7 @@ def test_public_payment_messages_are_compact() -> None:
         "total": 819.9,
     }
 
-    assert cli._public_result(
+    assert main._public_result(
         {
             "status": "completed",
             "cart": {"id": "cart-123"},
@@ -252,16 +252,16 @@ def test_ensure_cart_can_clear_existing_items() -> None:
 
 
 def test_run_returns_structured_unexpected_error(monkeypatch) -> None:
-    async def fake_build_graph():
+    async def fake_build_graph(observer=None):
         return FailingGraph()
 
     async def fake_close_mcp_tools():
         return None
 
-    monkeypatch.setattr(cli, "build_graph", fake_build_graph)
-    monkeypatch.setattr(cli, "close_mcp_tools", fake_close_mcp_tools)
+    monkeypatch.setattr(main, "build_graph", fake_build_graph)
+    monkeypatch.setattr(main, "close_mcp_tools", fake_close_mcp_tools)
 
-    result = asyncio.run(cli.run("Compre um Tenis X", "buyer", {}))
+    result = asyncio.run(main.run("Compre um Tenis X", "buyer", {}))
 
     assert result == {
         "status": "error",

@@ -398,5 +398,15 @@
     "pix_code": "PIX-07BE3778B2FD40AA",
     "transaction_id": "8e825735-00c8-4cea-ba9f-54b61e10e03b",
     "status": "pending"
+  },
+  {
+    "id": "pay_11e020be62dc",
+    "checkout_id": "chk_37c86b55fa3d",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-4C29DD3B09034722",
+    "transaction_id": "06026397-979c-4bfc-a960-c2fcf6cdb0a3",
+    "status": "pending"
   }
 ]

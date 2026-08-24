@@ -10,7 +10,6 @@ from typing import Any, Callable
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-
 MCPObserver = Callable[
     [str, str, dict[str, Any], dict[str, Any] | None, Exception | None], None
 ]
@@ -81,9 +80,7 @@ class MCPToolset:
         self.stack = AsyncExitStack()
         self.sessions: list[ClientSession] = []
 
-    async def connect(
-        self, observer: MCPObserver | None = None
-    ) -> dict[str, MCPTool]:
+    async def connect(self, observer: MCPObserver | None = None) -> dict[str, MCPTool]:
         configs = {
             "ecommerce": (
                 "agent_economy_e2e.ecommerce.mcp.server",
