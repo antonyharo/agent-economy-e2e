@@ -17,6 +17,25 @@ class FailingPaymentTool:
         )
 
 
+class ReturningTool:
+    def __init__(self, result: dict[str, Any]) -> None:
+        self.result = result
+        self.calls = 0
+
+    async def ainvoke(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.calls += 1
+        return self.result
+
+
+class MissingCartTool:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def ainvoke(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.calls += 1
+        raise RuntimeError("Error executing tool get_cart: No active cart")
+
+
 class FailingGraph:
     async def ainvoke(self, input_value: Any, config: Any) -> dict[str, Any]:
         raise RuntimeError("falha inesperada")
@@ -43,6 +62,55 @@ def test_authorize_payment_returns_structured_business_error() -> None:
         ),
     }
     assert _after_authorize_payment(result) == "__end__"
+
+
+def test_ensure_cart_reuses_existing_cart() -> None:
+    get_cart = ReturningTool({"id": "cart-existing"})
+    create_cart = ReturningTool({"id": "cart-created"})
+    nodes = _nodes(
+        {"get_cart": get_cart, "create_cart": create_cart},
+        FakeModel(),
+    )
+
+    result = asyncio.run(nodes["ensure_cart"]({}))
+
+    assert result == {"cart": {"id": "cart-existing"}}
+    assert get_cart.calls == 1
+    assert create_cart.calls == 0
+
+
+def test_ensure_cart_creates_cart_when_none_is_active() -> None:
+    get_cart = MissingCartTool()
+    create_cart = ReturningTool({"id": "cart-created"})
+    nodes = _nodes(
+        {"get_cart": get_cart, "create_cart": create_cart},
+        FakeModel(),
+    )
+
+    result = asyncio.run(nodes["ensure_cart"]({}))
+
+    assert result == {"cart": {"id": "cart-created"}}
+    assert get_cart.calls == 1
+    assert create_cart.calls == 1
+
+
+def test_ensure_cart_can_clear_existing_items() -> None:
+    get_cart = ReturningTool(
+        {
+            "id": "cart-existing",
+            "items": [{"product_id": "prod_tenis_x", "quantity": 1}],
+        }
+    )
+    clear_cart = ReturningTool({"id": "cart-existing", "items": []})
+    nodes = _nodes(
+        {"get_cart": get_cart, "clear_cart": clear_cart},
+        FakeModel(),
+    )
+
+    result = asyncio.run(nodes["ensure_cart"]({}))
+
+    assert result == {"cart": {"id": "cart-existing", "items": []}}
+    assert clear_cart.calls == 1
 
 
 def test_run_returns_structured_unexpected_error(monkeypatch) -> None:

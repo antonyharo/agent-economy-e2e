@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_ollama import ChatOllama
@@ -74,24 +74,33 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         if "product_query" in state:
             return {}
 
+        user_request = state.get("user_request")
+        if user_request is None:
+            raise ValueError("O pedido do usuario nao foi informado.")
         request = await structured_model.ainvoke(
             [
                 (
                     "system",
-                    "Converta o pedido em dados de compra. "
-                    "Nao invente dados ausentes; solicite-os ao usuario.",
+                    (
+                        "Converta o pedido em dados de compra. "
+                        "Nao invente dados ausentes; solicite-os ao usuario."
+                    ),
                 ),
-                ("human", state["user_request"]),
+                ("human", user_request),
             ]
         )
+        request = cast(PurchaseRequest, request)
         planned = request.model_dump()
         for field in ("shipping_address", "payer_account_id", "shipping_option"):
-            if field in state:
-                planned[field] = state[field]
+            value = state.get(field)
+            if value is not None:
+                planned[field] = value
         return planned
 
     async def search_product(state: PurchaseState) -> dict[str, Any]:
-        original_query = state["product_query"]
+        original_query = state.get("product_query")
+        if original_query is None:
+            raise ValueError("A consulta do produto nao foi informada.")
         query = _clean_product_query(original_query)
         result = await tools["search_products"].ainvoke({"query": query, "limit": 10})
         products = result.get("products", [])
@@ -130,13 +139,25 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
                 variant_id = matching_variant["id"]
         return {"product_id": product["id"], "variant_id": variant_id}
 
-    async def create_cart(state: PurchaseState) -> dict[str, Any]:
-        return {"cart": await tools["create_cart"].ainvoke({})}
+    async def ensure_cart(state: PurchaseState) -> dict[str, Any]:
+        try:
+            cart = await tools["get_cart"].ainvoke({})
+        except RuntimeError as exc:
+            if "No active cart" not in str(exc):
+                raise
+            cart = await tools["create_cart"].ainvoke({})
+
+        if cart.get("items"):
+            cart = await tools["clear_cart"].ainvoke({})
+        return {"cart": cart}
 
     async def add_to_cart(state: PurchaseState) -> dict[str, Any]:
+        product_id = state.get("product_id")
+        if product_id is None:
+            raise ValueError("O produto nao foi identificado.")
         cart = await tools["add_to_cart"].ainvoke(
             {
-                "product_id": state["product_id"],
+                "product_id": product_id,
                 "quantity": state.get("quantity", 1),
                 "variant_id": state.get("variant_id"),
             }
@@ -147,10 +168,14 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         return {"totals": await tools["calculate_cart"].ainvoke({})}
 
     async def create_checkout(state: PurchaseState) -> dict[str, Any]:
+        cart = state.get("cart")
+        shipping_address = state.get("shipping_address")
+        if cart is None or shipping_address is None:
+            raise ValueError("Carrinho ou endereco de entrega ausente.")
         checkout = await tools["create_checkout"].ainvoke(
             {
-                "cart_id": state["cart"]["id"],
-                "shipping_address": state["shipping_address"],
+                "cart_id": cart["id"],
+                "shipping_address": shipping_address,
                 "shipping_option": "standard",
                 "payment_method": "pix",
             }
@@ -158,17 +183,23 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         return {"checkout": checkout}
 
     async def get_payment_instructions(state: PurchaseState) -> dict[str, Any]:
+        checkout = state.get("checkout")
+        if checkout is None:
+            raise ValueError("O checkout nao foi criado.")
         instructions = await tools["get_payment_instructions"].ainvoke(
-            {"checkout_id": state["checkout"]["checkout_id"]}
+            {"checkout_id": checkout["checkout_id"]}
         )
         return {"instructions": instructions, "status": "awaiting_approval"}
 
     def request_approval(state: PurchaseState) -> dict[str, Any]:
-        instructions = state["instructions"]
+        instructions = state.get("instructions")
+        checkout = state.get("checkout")
+        if instructions is None or checkout is None:
+            raise ValueError("As instrucoes de pagamento nao foram geradas.")
         decision = interrupt(
             {
                 "type": "payment_approval",
-                "checkout_id": state["checkout"]["checkout_id"],
+                "checkout_id": checkout["checkout_id"],
                 "amount": instructions["amount"],
                 "pix_code": instructions["pix_code"],
             }
@@ -178,14 +209,18 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         return {"status": "cancelled", "error": "Pagamento cancelado pelo usuario."}
 
     async def authorize_payment(state: PurchaseState) -> dict[str, Any]:
-        instructions = state["instructions"]
+        instructions = state.get("instructions")
+        payer_account_id = state.get("payer_account_id")
+        checkout = state.get("checkout")
+        if instructions is None or payer_account_id is None or checkout is None:
+            raise ValueError("Dados insuficientes para autorizar o pagamento.")
         try:
             payment = await tools["authorize_payment"].ainvoke(
                 {
-                    "payer_account_id": state["payer_account_id"],
+                    "payer_account_id": payer_account_id,
                     "pix_code": instructions["pix_code"],
                     "amount": f"{instructions['amount']:.2f}",
-                    "reference_id": state["checkout"]["checkout_id"],
+                    "reference_id": checkout["checkout_id"],
                 }
             )
         except RuntimeError as exc:
@@ -193,10 +228,14 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         return {"payment": payment}
 
     async def confirm_order(state: PurchaseState) -> dict[str, Any]:
+        checkout = state.get("checkout")
+        instructions = state.get("instructions")
+        if checkout is None or instructions is None:
+            raise ValueError("Dados insuficientes para confirmar o pedido.")
         order = await tools["confirm_order"].ainvoke(
             {
-                "checkout_id": state["checkout"]["checkout_id"],
-                "payment_id": state["instructions"]["payment_id"],
+                "checkout_id": checkout["checkout_id"],
+                "payment_id": instructions["payment_id"],
             }
         )
         return {"order": order, "status": "completed"}
@@ -216,8 +255,12 @@ def _after_authorize_payment(state: PurchaseState) -> str:
     return END if state.get("status") == "cancelled" else "confirm_order"
 
 
-def build_purchase_graph(model: BaseChatModel | None = None, tools=None):
+def build_purchase_graph(
+    model: BaseChatModel | None = None, tools: dict[str, Any] | None = None
+):
     """Build the purchase graph. HTTP Mini Bank/Pix must already be running."""
+    if tools is None:
+        raise ValueError("As tools MCP devem ser fornecidas.")
     resolved_model = model or ChatOllama(model="qwen3:1.7b", temperature=0)
     graph = StateGraph(PurchaseState)
     nodes = _nodes(tools, resolved_model)
@@ -225,7 +268,7 @@ def build_purchase_graph(model: BaseChatModel | None = None, tools=None):
     for name in (
         "plan_request",
         "search_product",
-        "create_cart",
+        "ensure_cart",
         "add_to_cart",
         "calculate_cart",
         "create_checkout",
@@ -239,9 +282,9 @@ def build_purchase_graph(model: BaseChatModel | None = None, tools=None):
     graph.add_edge(START, "plan_request")
     graph.add_edge("plan_request", "search_product")
     graph.add_conditional_edges(
-        "search_product", _after_search, {"create_cart": "create_cart", END: END}
+        "search_product", _after_search, {"create_cart": "ensure_cart", END: END}
     )
-    graph.add_edge("create_cart", "add_to_cart")
+    graph.add_edge("ensure_cart", "add_to_cart")
     graph.add_edge("add_to_cart", "calculate_cart")
     graph.add_edge("calculate_cart", "create_checkout")
     graph.add_edge("create_checkout", "get_payment_instructions")

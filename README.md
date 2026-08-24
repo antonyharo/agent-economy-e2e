@@ -126,7 +126,8 @@ O runner [src/run.py](src/run.py) inicia automaticamente Mini Pix, Mini Bank, Ec
 
 ```text
 search_products
- -> create_cart
+ -> get_cart / create_cart
+ -> revisar carrinho (continuar, alterar quantidade, remover ou limpar)
  -> add_to_cart
  -> calculate_cart
  -> create_checkout
@@ -224,7 +225,9 @@ docker compose down
 
 O pacote `agent_economy_e2e.agent` implementa o fluxo de compra com LangGraph. O
 LLM interpreta o pedido, enquanto o grafo controla a ordem das tools MCP e pausa
-antes do débito PIX para aprovação explícita.
+antes do débito PIX para aprovação explícita. Quando já existe um carrinho ativo
+com itens, o agente também pausa para permitir continuar, alterar quantidades,
+remover itens ou limpar o carrinho antes de adicionar a nova compra.
 
 Com Mini Pix e Mini Bank em execução, use:
 

@@ -38,10 +38,10 @@ async def run(
         while result.get("__interrupt__"):
             interruption = result["__interrupt__"][0]
             print(json.dumps(interruption.value, ensure_ascii=False, indent=2))
-            approved = input("Autorizar pagamento? [s/N] ").strip().lower() == "s"
-            result = await graph.ainvoke(Command(resume=approved), config)
+            decision = input("Autorizar pagamento? [s/N] ").strip().lower() == "s"
+            result = await graph.ainvoke(Command(resume=decision), config)
         return result
-    except Exception as exc:
+    except (EOFError, OSError, RuntimeError, ValueError) as exc:
         return {
             "status": "error",
             "error": {
