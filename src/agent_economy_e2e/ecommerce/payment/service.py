@@ -19,7 +19,7 @@ from agent_economy_e2e.ecommerce.payment.models import (
 )
 from agent_economy_e2e.ecommerce.payment.repository import PaymentRepository
 
-DEFAULT_MINI_PIX_URL = "http://127.0.0.1:8001"
+DEFAULT_MINI_BANK_URL = "http://127.0.0.1:8001"
 DEFAULT_RECEIVER_ACCOUNT_ID = "seller"
 
 
@@ -141,11 +141,11 @@ class RealPixPaymentService(SimulatedPixPaymentService):
         self,
         repository: PaymentRepository,
         checkouts: CheckoutService,
-        mini_pix_url: str | None = None,
+        mini_bank_url: str | None = None,
     ) -> None:
         super().__init__(repository, checkouts)
-        self._mini_pix_url = mini_pix_url or os.environ.get(
-            "MINI_PIX_URL", DEFAULT_MINI_PIX_URL
+        self._mini_bank_url = mini_bank_url or os.environ.get(
+            "MINI_BANK_URL", DEFAULT_MINI_BANK_URL
         )
 
     def get_payment_instructions(self, checkout_id: str) -> PaymentInstructions:
@@ -154,9 +154,7 @@ class RealPixPaymentService(SimulatedPixPaymentService):
         if existing is not None:
             return self._to_instructions(existing)
 
-        txid = new_id("tx")
         payload = {
-            "txid": txid,
             "receiver_account_id": DEFAULT_RECEIVER_ACCOUNT_ID,
             "amount": f"{checkout.total:.2f}",
             "currency": checkout.currency,
@@ -181,7 +179,7 @@ class RealPixPaymentService(SimulatedPixPaymentService):
 
     def _create_charge(self, payload: dict[str, Any]) -> dict[str, Any]:
         request = Request(
-            f"{self._mini_pix_url.rstrip('/')}/charges",
+            f"{self._mini_bank_url.rstrip('/')}/charges",
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json"},
         )
@@ -190,3 +188,14 @@ class RealPixPaymentService(SimulatedPixPaymentService):
                 return json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, TimeoutError) as exc:
             raise ValidationError(f"Mini Pix request failed: {exc}") from exc
+
+    
+    def _to_instructions(self, payment: Payment) -> PaymentInstructions:
+        return PaymentInstructions(
+            payment_id=payment.id,
+            method=payment.method,
+            amount=payment.amount,
+            currency=payment.currency,
+            pix_code=payment.pix_code,
+            status=payment.status,
+        )

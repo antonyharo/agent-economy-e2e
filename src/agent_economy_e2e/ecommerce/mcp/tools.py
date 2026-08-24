@@ -132,15 +132,6 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
         """Create or return real Mini Pix instructions for a checkout."""
         return _dump(app.payment.get_payment_instructions(checkout_id))
 
-    @mcp.tool()
-    def get_payment_status(checkout_id: str) -> dict[str, Any]:
-        """Return the current payment status for a checkout."""
-        return _dump(app.payment.get_payment_status(checkout_id))
-
-    @mcp.tool()
-    def simulate_pix_payment(payment_id: str) -> dict[str, Any]:
-        """Sandbox-only: mark a simulated PIX payment as paid."""
-        return _dump(app.payment.simulate_payment(payment_id))
 
     @mcp.tool()
     def confirm_order(checkout_id: str, payment_id: str) -> dict[str, Any]:

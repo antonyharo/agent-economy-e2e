@@ -37,18 +37,16 @@ class EcommerceApp:
         self.order = order
 
 
-def create_app(data_dir: Path, mini_pix_url: str | None = None) -> EcommerceApp:
+def create_app(data_dir: Path, mini_bank_url: str | None = None) -> EcommerceApp:
     ensure_seed_data(data_dir)
     store = JsonStore(data_dir)
     catalog = CatalogService(CatalogRepository(store))
     cart = CartService(CartRepository(store), catalog)
     checkout = CheckoutService(CheckoutRepository(store), cart)
     payment_repository = PaymentRepository(store)
-    resolved_mini_pix_url = mini_pix_url or os.environ.get("MINI_PIX_URL")
+    resolved_mini_bank_url = mini_bank_url or os.environ.get("MINI_BANK_URL")
     payment: PaymentService = (
-        RealPixPaymentService(payment_repository, checkout, resolved_mini_pix_url)
-        if resolved_mini_pix_url
-        else SimulatedPixPaymentService(payment_repository, checkout)
+        RealPixPaymentService(payment_repository, checkout, resolved_mini_bank_url)
     )
     order = OrderService(OrderRepository(store), checkout, payment, cart)
     return EcommerceApp(
@@ -61,6 +59,6 @@ def create_app(data_dir: Path, mini_pix_url: str | None = None) -> EcommerceApp:
 
 
 def create_financial_app(
-    data_dir: Path, mini_pix_url: str | None = None
+    data_dir: Path, mini_bank_url: str | None = None
 ) -> EcommerceApp:
-    return create_app(data_dir, mini_pix_url or "http://127.0.0.1:8001")
+    return create_app(data_dir, mini_bank_url or "http://127.0.0.1:8001")
