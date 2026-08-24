@@ -9,8 +9,5 @@ wheels/
 # Virtual environments
 .venv
 
-# Runtime JSON database
-/data/
-
 generate_txt.py
 content.txt

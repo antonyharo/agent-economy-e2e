@@ -1,0 +1,16 @@
+[
+  {
+    "invoice_id": "invoice-47536fa75e58",
+    "transaction_id": "bd540118-322d-43f5-a0f6-275202a8914e",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "invoice_id": "invoice-3fe5a22ead32",
+    "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  }
+]

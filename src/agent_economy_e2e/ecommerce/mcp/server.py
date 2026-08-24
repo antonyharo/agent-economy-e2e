@@ -8,7 +8,8 @@ from mcp.server.mcpserver import MCPServer
 from agent_economy_e2e.ecommerce.app import EcommerceApp, create_app
 from agent_economy_e2e.ecommerce.mcp.tools import register_tools
 
-DEFAULT_DATA_DIR = Path("data")
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data" / "ecommerce"
 
 
 class EcommerceMCP(MCPServer):

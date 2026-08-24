@@ -1,0 +1,14 @@
+[
+  {
+    "account_id": "buyer",
+    "balance": "180.10",
+    "currency": "BRL",
+    "_debit_transactions": ["654751ee-c140-4a89-a3ac-885c9160d9f1"]
+  },
+  {
+    "account_id": "seller",
+    "balance": "869.90",
+    "currency": "BRL",
+    "_credit_transactions": ["654751ee-c140-4a89-a3ac-885c9160d9f1"]
+  }
+]

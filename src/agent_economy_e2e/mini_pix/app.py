@@ -19,7 +19,8 @@ from .models import (
     TransactionRequest,
 )
 
-DEFAULT_DATA_DIR = Path(__file__).parent / "data"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data" / "mini-pix"
 
 
 def _json_default(value: Any) -> str:

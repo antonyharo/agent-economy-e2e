@@ -141,7 +141,7 @@ Execute a partir da raiz do projeto:
 uv run python src/run.py
 ```
 
-O runner escolhe portas livres, cria dados financeiros isolados e usa saldo suficiente para o comprador. O diretório de dados é temporário e removido quando a execução termina.
+O runner escolhe portas livres e usa os dados persistidos em `data/`, com saldo suficiente para o comprador na primeira execução.
 
 Por padrão, cada execução grava um log detalhado em `e2e_run.log`. É possível escolher outro arquivo:
 
@@ -153,23 +153,23 @@ O log contém timestamps, descrições das ações, requisições e respostas MC
 
 ## Configuração
 
-| Variável             | Uso                                      | Padrão                      |
-| -------------------- | ---------------------------------------- | --------------------------- |
-| `ECOMMERCE_DATA_DIR` | Diretório dos JSONs do Ecommerce MCP.    | `data`                      |
-| `MINI_BANK_DATA_DIR` | Diretório dos JSONs do Mini Bank.        | `data` relativo ao processo |
-| `MINI_PIX_DATA_DIR`  | Diretório dos JSONs do Mini Pix.         | `data` relativo ao processo |
-| `MINI_BANK_URL`      | URL do Mini Bank usada pelo Gateway MCP. | Definida pelo ambiente      |
-| `MINI_PIX_URL`       | URL financeira usada pelos serviços.     | `http://127.0.0.1:8001`     |
+| Variável             | Uso                                      | Padrão                  |
+| -------------------- | ---------------------------------------- | ----------------------- |
+| `ECOMMERCE_DATA_DIR` | Diretório dos JSONs do Ecommerce MCP.    | `data/ecommerce`        |
+| `MINI_BANK_DATA_DIR` | Diretório dos JSONs do Mini Bank.        | `data/mini-bank`        |
+| `MINI_PIX_DATA_DIR`  | Diretório dos JSONs do Mini Pix.         | `data/mini-pix`         |
+| `MINI_BANK_URL`      | URL do Mini Bank usada pelo Gateway MCP. | Definida pelo ambiente  |
+| `MINI_PIX_URL`       | URL financeira usada pelos serviços.     | `http://127.0.0.1:8001` |
 
 No runner, a configuração é montada automaticamente por processo. Devido ao contrato atual do Ecommerce MCP, `MINI_PIX_URL` recebe a URL do Mini Bank nesse processo para que `confirm_order` consiga consultar a cobrança reconciliada. Em execução manual, mantenha essa mesma ligação entre Ecommerce MCP e Mini Bank.
 
 ## Persistência
 
-O Ecommerce MCP grava coleções como `catalog.json`, `carts.json`, `checkouts.json`, `payments.json` e `orders.json` no diretório definido por `ECOMMERCE_DATA_DIR`.
+O Ecommerce MCP grava coleções como `catalog.json`, `carts.json`, `checkouts.json`, `payments.json` e `orders.json` em `data/ecommerce` por padrão.
 
-O Mini Bank grava `accounts.json`. O Mini Pix grava `charges.json`, `transactions.json` e `invoices.json` no diretório definido por suas variáveis de ambiente.
+O Mini Bank grava `accounts.json` em `data/mini-bank`, e o Mini Pix grava `charges.json`, `transactions.json` e `invoices.json` em `data/mini-pix`. Os caminhos podem ser substituídos pelas variáveis de ambiente correspondentes.
 
-No runner E2E, esses arquivos ficam em um diretório temporário. Apenas o log permanece no workspace, salvo quando outro caminho é informado com `--log`.
+No runner E2E, esses arquivos permanecem no workspace entre execuções. O log continua sendo gravado em `e2e_run.log`, salvo quando outro caminho é informado com `--log`.
 
 ## Fluxo financeiro
 

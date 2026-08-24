@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pay_9e94013ec57c",
+    "checkout_id": "chk_ec398f016cee",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-2B1BC9DDCD504F7B",
+    "transaction_id": "bd540118-322d-43f5-a0f6-275202a8914e",
+    "status": "paid"
+  },
+  {
+    "id": "pay_f9eaa62f876b",
+    "checkout_id": "chk_6c9bafd0a130",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-AB6CF3441F2542F6",
+    "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
+    "status": "paid"
+  }
+]

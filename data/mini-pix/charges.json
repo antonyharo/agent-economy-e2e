@@ -1,0 +1,20 @@
+[
+  {
+    "pix_code": "PIX-2B1BC9DDCD504F7B",
+    "charge_id": "charge-296a74c4eae6",
+    "transaction_id": "bd540118-322d-43f5-a0f6-275202a8914e",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "pix_code": "PIX-AB6CF3441F2542F6",
+    "charge_id": "charge-c692e1d85bab",
+    "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  }
+]

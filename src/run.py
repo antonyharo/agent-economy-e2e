@@ -9,8 +9,7 @@ import os
 import socket
 import subprocess
 import sys
-import tempfile
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, nullcontext
 from pathlib import Path
 from typing import Any
 from urllib.error import URLError
@@ -173,31 +172,37 @@ async def run(log_path: Path) -> dict[str, Any]:
     logger = Logger(log_path)
     processes: list[tuple[str, subprocess.Popen[bytes]]] = []
     try:
-        with tempfile.TemporaryDirectory(prefix="agent-economy-e2e-") as temporary:
-            data_root = Path(temporary)
+        with nullcontext(ROOT / "data") as data_root:
+            data_root.mkdir(parents=True, exist_ok=True)
             pix_port = _free_port()
             bank_port = _free_port()
             pix_url = f"http://127.0.0.1:{pix_port}"
             bank_url = f"http://127.0.0.1:{bank_port}"
             base_env = os.environ.copy()
-            bank_data_dir = data_root / "bank"
-            bank_data_dir.mkdir(parents=True)
-            (bank_data_dir / "accounts.json").write_text(
-                json.dumps(
-                    [
-                        {
-                            "account_id": "buyer",
-                            "balance": "1000.00",
-                            "currency": "BRL",
-                        },
-                        {"account_id": "seller", "balance": "50.00", "currency": "BRL"},
-                    ],
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
+            bank_data_dir = data_root / "mini-bank"
+            bank_data_dir.mkdir(parents=True, exist_ok=True)
+            accounts_path = bank_data_dir / "accounts.json"
+            if not accounts_path.exists():
+                accounts_path.write_text(
+                    json.dumps(
+                        [
+                            {
+                                "account_id": "buyer",
+                                "balance": "1000.00",
+                                "currency": "BRL",
+                            },
+                            {
+                                "account_id": "seller",
+                                "balance": "50.00",
+                                "currency": "BRL",
+                            },
+                        ],
+                        indent=2,
+                    ),
+                    encoding="utf-8",
+                )
 
-            pix_env = base_env | {"MINI_PIX_DATA_DIR": str(data_root / "pix")}
+            pix_env = base_env | {"MINI_PIX_DATA_DIR": str(data_root / "mini-pix")}
             bank_env = base_env | {
                 "MINI_BANK_DATA_DIR": str(bank_data_dir),
                 "MINI_PIX_URL": pix_url,

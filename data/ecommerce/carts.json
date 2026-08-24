@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cart_15d642794ed2",
+    "agent_id": "default",
+    "status": "checked_out",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ]
+  },
+  {
+    "id": "cart_9a59f7645c12",
+    "agent_id": "default",
+    "status": "checked_out",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ]
+  }
+]
