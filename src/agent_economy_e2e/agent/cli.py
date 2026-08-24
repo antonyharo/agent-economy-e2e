@@ -24,16 +24,16 @@ DEFAULT_ADDRESS = {
 async def run(
     request: str, payer_account_id: str, address: dict[str, str]
 ) -> dict[str, Any]:
-    graph = await build_graph()
-    config: RunnableConfig = {"configurable": {"thread_id": "local-purchase"}}
-    state: PurchaseState = {
-        "user_request": request,
-        "payer_account_id": payer_account_id,
-        "shipping_address": address,
-        "status": "running",
-    }
-
     try:
+        graph = await build_graph()
+        config: RunnableConfig = {"configurable": {"thread_id": "local-purchase"}}
+        state: PurchaseState = {
+            "user_request": request,
+            "payer_account_id": payer_account_id,
+            "shipping_address": address,
+            "status": "running",
+        }
+
         result = await graph.ainvoke(state, config)
         while result.get("__interrupt__"):
             interruption = result["__interrupt__"][0]
@@ -41,6 +41,14 @@ async def run(
             approved = input("Autorizar pagamento? [s/N] ").strip().lower() == "s"
             result = await graph.ainvoke(Command(resume=approved), config)
         return result
+    except Exception as exc:
+        return {
+            "status": "error",
+            "error": {
+                "type": type(exc).__name__,
+                "message": str(exc),
+            },
+        }
     finally:
         await close_mcp_tools()
 

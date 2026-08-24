@@ -33,5 +33,10 @@
     "transaction_id": "f96f27eb-f93d-4531-ab73-c6a70f77f857",
     "currency": "BRL",
     "status": "FAILED"
+  },
+  {
+    "transaction_id": "fe9c2f00-ff98-4b2a-87b3-144509b11a44",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]

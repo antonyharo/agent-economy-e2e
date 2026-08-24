@@ -179,14 +179,17 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
 
     async def authorize_payment(state: PurchaseState) -> dict[str, Any]:
         instructions = state["instructions"]
-        payment = await tools["authorize_payment"].ainvoke(
-            {
-                "payer_account_id": state["payer_account_id"],
-                "pix_code": instructions["pix_code"],
-                "amount": f"{instructions['amount']:.2f}",
-                "reference_id": state["checkout"]["checkout_id"],
-            }
-        )
+        try:
+            payment = await tools["authorize_payment"].ainvoke(
+                {
+                    "payer_account_id": state["payer_account_id"],
+                    "pix_code": instructions["pix_code"],
+                    "amount": f"{instructions['amount']:.2f}",
+                    "reference_id": state["checkout"]["checkout_id"],
+                }
+            )
+        except RuntimeError as exc:
+            return {"status": "cancelled", "error": str(exc)}
         return {"payment": payment}
 
     async def confirm_order(state: PurchaseState) -> dict[str, Any]:
@@ -207,6 +210,10 @@ def _after_search(state: PurchaseState) -> str:
 
 def _after_approval(state: PurchaseState) -> str:
     return END if state.get("status") == "cancelled" else "authorize_payment"
+
+
+def _after_authorize_payment(state: PurchaseState) -> str:
+    return END if state.get("status") == "cancelled" else "confirm_order"
 
 
 def build_purchase_graph(model: BaseChatModel | None = None, tools=None):
@@ -244,7 +251,11 @@ def build_purchase_graph(model: BaseChatModel | None = None, tools=None):
         _after_approval,
         {"authorize_payment": "authorize_payment", END: END},
     )
-    graph.add_edge("authorize_payment", "confirm_order")
+    graph.add_conditional_edges(
+        "authorize_payment",
+        _after_authorize_payment,
+        {"confirm_order": "confirm_order", END: END},
+    )
     graph.add_edge("confirm_order", END)
     return graph.compile(checkpointer=MemorySaver())
 

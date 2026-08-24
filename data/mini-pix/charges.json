@@ -61,5 +61,14 @@
     "amount": "819.90",
     "currency": "BRL",
     "status": "FAILED"
+  },
+  {
+    "pix_code": "PIX-106612B122EC48D7",
+    "charge_id": "charge-50148d640562",
+    "transaction_id": "fe9c2f00-ff98-4b2a-87b3-144509b11a44",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]
