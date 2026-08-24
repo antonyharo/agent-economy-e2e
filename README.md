@@ -74,13 +74,6 @@ Inicie o servidor via entry point:
 uv run ecommerce-mcp
 ```
 
-Alternativas:
-
-```bash
-uv run python -m agent_economy_e2e
-uv run app
-```
-
 Exemplo de configuração para um cliente MCP:
 
 ```json
@@ -229,7 +222,7 @@ As APIs ficam disponíveis em `http://localhost:8001` (Mini Pix) e
 docker compose down
 ```
 
-## Agente LangGraph com Ollama
+## Entrypoint do sandbox: agente LangGraph com Ollama
 
 O pacote `agent_economy_e2e.agent` implementa o fluxo de compra com LangGraph. O
 LLM interpreta o pedido, enquanto o grafo controla a ordem das tools MCP e pausa

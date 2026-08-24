@@ -5,19 +5,37 @@ import json
 import os
 import sys
 from contextlib import AsyncExitStack
-from typing import Any
+from typing import Any, Callable
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
+MCPObserver = Callable[
+    [str, str, dict[str, Any], dict[str, Any] | None, Exception | None], None
+]
+
+
 class MCPTool:
-    def __init__(self, session: ClientSession, name: str) -> None:
+    def __init__(
+        self,
+        session: ClientSession,
+        name: str,
+        observer: MCPObserver | None = None,
+    ) -> None:
         self.session = session
         self.name = name
+        self.observer = observer
 
     async def ainvoke(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        result = await self.session.call_tool(self.name, arguments)
+        if self.observer is not None:
+            self.observer("start", self.name, arguments, None, None)
+        try:
+            result = await self.session.call_tool(self.name, arguments)
+        except Exception as exc:
+            if self.observer is not None:
+                self.observer("error", self.name, arguments, None, exc)
+            raise
         if getattr(result, "isError", False):
             message = next(
                 (
@@ -27,10 +45,15 @@ class MCPTool:
                 ),
                 "MCP tool failed without a message",
             )
-            raise RuntimeError(message)
+            error = RuntimeError(message)
+            if self.observer is not None:
+                self.observer("error", self.name, arguments, None, error)
+            raise error
 
         structured = getattr(result, "structuredContent", None)
         if isinstance(structured, dict) and structured:
+            if self.observer is not None:
+                self.observer("success", self.name, arguments, structured, None)
             return structured
 
         for item in getattr(result, "content", []):
@@ -44,8 +67,13 @@ class MCPTool:
                     except (SyntaxError, ValueError):
                         raise RuntimeError(str(text)) from None
                 if isinstance(decoded, dict):
+                    if self.observer is not None:
+                        self.observer("success", self.name, arguments, decoded, None)
                     return decoded
-        raise RuntimeError(f"Unexpected MCP result from {self.name}")
+        error = RuntimeError(f"Unexpected MCP result from {self.name}")
+        if self.observer is not None:
+            self.observer("error", self.name, arguments, None, error)
+        raise error
 
 
 class MCPToolset:
@@ -53,7 +81,9 @@ class MCPToolset:
         self.stack = AsyncExitStack()
         self.sessions: list[ClientSession] = []
 
-    async def connect(self) -> dict[str, MCPTool]:
+    async def connect(
+        self, observer: MCPObserver | None = None
+    ) -> dict[str, MCPTool]:
         configs = {
             "ecommerce": (
                 "agent_economy_e2e.ecommerce.mcp.server",
@@ -88,18 +118,18 @@ class MCPToolset:
             self.sessions.append(session)
             listed = await session.list_tools()
             for tool in listed.tools:
-                tools[tool.name] = MCPTool(session, tool.name)
+                tools[tool.name] = MCPTool(session, tool.name, observer)
         return tools
 
     async def close(self) -> None:
         await self.stack.aclose()
 
 
-async def load_mcp_tools() -> dict[str, Any]:
+async def load_mcp_tools(observer: MCPObserver | None = None) -> dict[str, Any]:
     """Load tools from both MCP servers and keep their sessions alive."""
     global _toolset
     _toolset = MCPToolset()
-    return await _toolset.connect()
+    return await _toolset.connect(observer)
 
 
 _toolset: MCPToolset | None = None

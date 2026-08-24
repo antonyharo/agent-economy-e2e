@@ -313,5 +313,50 @@
     "amount": "518.00",
     "currency": "BRL",
     "status": "COMPLETED"
+  },
+  {
+    "pix_code": "PIX-F005E89D82474EAC",
+    "charge_id": "charge-47cff0f81f38",
+    "transaction_id": "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "pix_code": "PIX-99F56B0D06E947CC",
+    "charge_id": "charge-0087d2e838e7",
+    "transaction_id": "3ff85ade-de64-4c2b-9464-a09c992e28ad",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "pix_code": "PIX-18A82132B4FB4D56",
+    "charge_id": "charge-4f61c32a21d9",
+    "transaction_id": "be2920f1-bbaf-4e22-acee-d497962ada6b",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "pix_code": "PIX-299BCD63674C4FFE",
+    "charge_id": "charge-34b42ad782fe",
+    "transaction_id": "4dcc6302-7f22-4937-82d0-4db85631d908",
+    "receiver_account_id": "seller",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "pix_code": "PIX-07BE3778B2FD40AA",
+    "charge_id": "charge-6c8d87d8e553",
+    "transaction_id": "8e825735-00c8-4cea-ba9f-54b61e10e03b",
+    "receiver_account_id": "seller",
+    "amount": "3219.60",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]

@@ -1,24 +1,28 @@
 [
   {
     "account_id": "buyer",
-    "balance": "3544.20",
+    "balance": "1904.40",
     "currency": "BRL",
     "_debit_transactions": [
       "2a7eace4-f3fa-4d39-a19e-bfc6971a4692",
       "d1eb1b49-a76f-4373-b934-4a105ac31d69",
       "f40b91b4-ec81-46a2-ad97-0b899ef8d850",
-      "733e9b1c-99d6-4ab9-b7f5-95b482c04784"
+      "733e9b1c-99d6-4ab9-b7f5-95b482c04784",
+      "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+      "4dcc6302-7f22-4937-82d0-4db85631d908"
     ]
   },
   {
     "account_id": "seller",
-    "balance": "2725.80",
+    "balance": "4365.60",
     "currency": "BRL",
     "_credit_transactions": [
       "2a7eace4-f3fa-4d39-a19e-bfc6971a4692",
       "d1eb1b49-a76f-4373-b934-4a105ac31d69",
       "f40b91b4-ec81-46a2-ad97-0b899ef8d850",
-      "733e9b1c-99d6-4ab9-b7f5-95b482c04784"
+      "733e9b1c-99d6-4ab9-b7f5-95b482c04784",
+      "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+      "4dcc6302-7f22-4937-82d0-4db85631d908"
     ]
   }
 ]

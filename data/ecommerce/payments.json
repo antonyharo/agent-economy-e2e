@@ -348,5 +348,55 @@
     "pix_code": "PIX-4B2BAB828B5E4778",
     "transaction_id": "733e9b1c-99d6-4ab9-b7f5-95b482c04784",
     "status": "paid"
+  },
+  {
+    "id": "pay_349052384efb",
+    "checkout_id": "chk_60ca1bee32d4",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-F005E89D82474EAC",
+    "transaction_id": "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+    "status": "paid"
+  },
+  {
+    "id": "pay_22e17d3e80f5",
+    "checkout_id": "chk_7d75aeb60230",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-99F56B0D06E947CC",
+    "transaction_id": "3ff85ade-de64-4c2b-9464-a09c992e28ad",
+    "status": "pending"
+  },
+  {
+    "id": "pay_48623595ff26",
+    "checkout_id": "chk_fb2ad370d622",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-18A82132B4FB4D56",
+    "transaction_id": "be2920f1-bbaf-4e22-acee-d497962ada6b",
+    "status": "pending"
+  },
+  {
+    "id": "pay_0ea326961adf",
+    "checkout_id": "chk_55b528cc693b",
+    "method": "pix",
+    "amount": 819.9,
+    "currency": "BRL",
+    "pix_code": "PIX-299BCD63674C4FFE",
+    "transaction_id": "4dcc6302-7f22-4937-82d0-4db85631d908",
+    "status": "paid"
+  },
+  {
+    "id": "pay_0324f4858d27",
+    "checkout_id": "chk_f3e2846f906f",
+    "method": "pix",
+    "amount": 3219.6,
+    "currency": "BRL",
+    "pix_code": "PIX-07BE3778B2FD40AA",
+    "transaction_id": "8e825735-00c8-4cea-ba9f-54b61e10e03b",
+    "status": "pending"
   }
 ]

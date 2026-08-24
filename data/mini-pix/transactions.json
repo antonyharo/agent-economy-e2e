@@ -173,5 +173,30 @@
     "transaction_id": "733e9b1c-99d6-4ab9-b7f5-95b482c04784",
     "currency": "BRL",
     "status": "COMPLETED"
+  },
+  {
+    "transaction_id": "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "transaction_id": "3ff85ade-de64-4c2b-9464-a09c992e28ad",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "be2920f1-bbaf-4e22-acee-d497962ada6b",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "4dcc6302-7f22-4937-82d0-4db85631d908",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "transaction_id": "8e825735-00c8-4cea-ba9f-54b61e10e03b",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]

@@ -12,6 +12,7 @@ dependencies = [
     "langgraph>=1.0.0",
     "mcp[cli]>=2.0.0",
     "pydantic>=2.0",
+    "rich>=13.9.0",
     "streamlit>=1.40.0",
     "uvicorn>=0.30.0",
 ]
@@ -24,8 +25,8 @@ dev = [
 [project.scripts]
 ecommerce-mcp = "agent_economy_e2e.ecommerce.mcp.server:main"
 payment-gateway-mcp = "agent_economy_e2e.payment_gateway.server:main"
-app = "agent_economy_e2e.ecommerce.mcp.server:main"
-purchase-agent = "agent_economy_e2e.agent.cli:main"
+app = "agent_economy_e2e.main:main"
+purchase-agent = "agent_economy_e2e.main:main"
 
 [build-system]
 requires = ["hatchling"]

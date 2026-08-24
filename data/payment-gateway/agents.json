@@ -5,6 +5,6 @@
     "max_expeding_value": "1000.00",
     "permited_categories": ["acessorios", "calcados", "roupas"],
     "require_human_approval": false,
-    "human_approval_threshold": false
+    "human_approval_threshold": true
   }
 ]

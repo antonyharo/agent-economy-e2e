@@ -94,5 +94,53 @@
     },
     "total": 518.0,
     "currency": "BRL"
+  },
+  {
+    "id": "ord_4a598847e926",
+    "checkout_id": "chk_60ca1bee32d4",
+    "payment_id": "pay_349052384efb",
+    "status": "confirmed",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "unit_price": 799.9,
+        "quantity": 1
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "total": 819.9,
+    "currency": "BRL"
+  },
+  {
+    "id": "ord_68d0247d12f6",
+    "checkout_id": "chk_55b528cc693b",
+    "payment_id": "pay_0ea326961adf",
+    "status": "confirmed",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "unit_price": 799.9,
+        "quantity": 1
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "total": 819.9,
+    "currency": "BRL"
   }
 ]

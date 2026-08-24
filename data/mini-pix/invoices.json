@@ -26,5 +26,19 @@
     "amount": "518.00",
     "currency": "BRL",
     "status": "COMPLETED"
+  },
+  {
+    "invoice_id": "invoice-0564291ab90e",
+    "transaction_id": "4ede14ee-e3ad-44c6-881a-5b3632888ce5",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "invoice_id": "invoice-2a4287722b8d",
+    "transaction_id": "4dcc6302-7f22-4937-82d0-4db85631d908",
+    "amount": "819.90",
+    "currency": "BRL",
+    "status": "COMPLETED"
   }
 ]
