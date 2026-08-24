@@ -6,6 +6,10 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
+    "langchain>=1.0.0",
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.0.0",
+    "langgraph>=1.0.0",
     "mcp[cli]>=2.0.0",
     "pydantic>=2.0",
     "streamlit>=1.40.0",
@@ -21,6 +25,7 @@ dev = [
 ecommerce-mcp = "agent_economy_e2e.ecommerce.mcp.server:main"
 payment-gateway-mcp = "agent_economy_e2e.payment_gateway.server:main"
 app = "agent_economy_e2e.ecommerce.mcp.server:main"
+purchase-agent = "agent_economy_e2e.agent.cli:main"
 
 [build-system]
 requires = ["hatchling"]

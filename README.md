@@ -203,3 +203,35 @@ Os testes cobrem catálogo, carrinho, checkout, pagamento, pedidos, integração
 ## Dashboard Streamlit
 
 Execute `uv run streamlit run src/agent_economy_e2e/app.py` e use **Executar teste E2E** na barra lateral. A linha do tempo e os painéis são atualizados enquanto o runner avança pelas etapas; os dados continuam disponíveis em `data/`.
+
+## APIs com Docker Compose
+
+Suba o Mini Pix e o Mini Bank com os dados persistidos na raiz do projeto:
+
+```bash
+docker compose up --build -d
+```
+
+As APIs ficam disponíveis em `http://localhost:8001` (Mini Pix) e
+`http://localhost:8000` (Mini Bank). Os arquivos são gravados em
+`data/mini-pix` e `data/mini-bank`, respectivamente. Para parar os containers:
+
+```bash
+docker compose down
+```
+
+## Agente LangGraph
+
+O pacote `agent_economy_e2e.agent` implementa o fluxo de compra com LangGraph. O
+LLM interpreta o pedido, enquanto o grafo controla a ordem das tools MCP e pausa
+antes do débito PIX para aprovação explícita.
+
+Com Mini Pix e Mini Bank em execução, use:
+
+```bash
+uv run purchase-agent "Compre um Tenis X tamanho 42"
+```
+
+Por padrão, o agente usa a conta `buyer` e o endereço de teste. Para outra conta
+ou endereço, informe `--payer-account-id` e `--address` como JSON. É necessário
+definir `OPENAI_API_KEY` para o nó de interpretação do pedido.

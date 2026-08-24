@@ -126,5 +126,133 @@
     "status": "payment_pending",
     "payment_id": "pay_f31493118ae9",
     "order_id": null
+  },
+  {
+    "id": "chk_9b2e52b57480",
+    "cart_id": "cart_5c725006ac37",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "shipping_option": "standard",
+    "payment_method": "pix",
+    "subtotal": 799.9,
+    "shipping": 20.0,
+    "discount": 0.0,
+    "total": 819.9,
+    "currency": "BRL",
+    "status": "payment_pending",
+    "payment_id": null,
+    "order_id": null
+  },
+  {
+    "id": "chk_e5bfa458098c",
+    "cart_id": "cart_9a4bc4652366",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "shipping_option": "standard",
+    "payment_method": "pix",
+    "subtotal": 799.9,
+    "shipping": 20.0,
+    "discount": 0.0,
+    "total": 819.9,
+    "currency": "BRL",
+    "status": "confirmed",
+    "payment_id": "pay_01f69f81cc1b",
+    "order_id": "ord_bfdeea4361a9"
+  },
+  {
+    "id": "chk_a079cae2cf1d",
+    "cart_id": "cart_709157c6b8d6",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "shipping_option": "standard",
+    "payment_method": "pix",
+    "subtotal": 799.9,
+    "shipping": 20.0,
+    "discount": 0.0,
+    "total": 819.9,
+    "currency": "BRL",
+    "status": "payment_pending",
+    "payment_id": "pay_315aabc6b04e",
+    "order_id": null
+  },
+  {
+    "id": "chk_957073b1db26",
+    "cart_id": "cart_65860f76cae7",
+    "items": [
+      {
+        "product_id": "prod_tenis_x",
+        "variant_id": "var_42",
+        "name": "Tênis X",
+        "unit_price": 799.9,
+        "quantity": 1,
+        "currency": "BRL"
+      }
+    ],
+    "shipping_address": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01000-000",
+      "country": "BR"
+    },
+    "shipping_option": "standard",
+    "payment_method": "pix",
+    "subtotal": 799.9,
+    "shipping": 20.0,
+    "discount": 0.0,
+    "total": 819.9,
+    "currency": "BRL",
+    "status": "payment_pending",
+    "payment_id": "pay_819b4513c8a8",
+    "order_id": null
   }
 ]

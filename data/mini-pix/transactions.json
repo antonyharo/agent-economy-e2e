@@ -18,5 +18,20 @@
     "transaction_id": "c9f5e2a9-6205-440a-ab91-5d2be8d2d490",
     "currency": "BRL",
     "status": "FAILED"
+  },
+  {
+    "transaction_id": "1430e123-799d-44ab-b1c1-06da5fca6d10",
+    "currency": "BRL",
+    "status": "COMPLETED"
+  },
+  {
+    "transaction_id": "99057edd-bcb7-4491-a57d-02a6b8bce36a",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "f96f27eb-f93d-4531-ab73-c6a70f77f857",
+    "currency": "BRL",
+    "status": "FAILED"
   }
 ]
