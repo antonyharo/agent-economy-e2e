@@ -47,6 +47,8 @@ def create_app(data_dir: Path, mini_bank_url: str | None = None) -> EcommerceApp
     resolved_mini_bank_url = mini_bank_url or os.environ.get("MINI_BANK_URL")
     payment: PaymentService = (
         RealPixPaymentService(payment_repository, checkout, resolved_mini_bank_url)
+        if resolved_mini_bank_url
+        else SimulatedPixPaymentService(payment_repository, checkout)
     )
     order = OrderService(OrderRepository(store), checkout, payment, cart)
     return EcommerceApp(

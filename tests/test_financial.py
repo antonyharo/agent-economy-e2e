@@ -75,6 +75,9 @@ def test_mini_bank_creates_mini_pix_charge_with_uuid_txid(tmp_path: Path) -> Non
             resolve_pix_code(charge["pix_code"], tmp_path / "pix").transaction_id
             == charge["transaction_id"]
         )
+        bank_charge = TestClient(bank).get(f"/charges/{charge['pix_code']}")
+        assert bank_charge.status_code == 200
+        assert bank_charge.json()["status"] == "PENDING"
     finally:
         pix_server.should_exit = True
         pix_thread.join(timeout=5)
@@ -164,7 +167,7 @@ def test_ecommerce_financial_mcp_flow(tmp_path: Path) -> None:
     )
     try:
         ecommerce = create_financial_app(
-            tmp_path / "ecommerce", f"http://127.0.0.1:{pix_port}"
+            tmp_path / "ecommerce", f"http://127.0.0.1:{bank_port}"
         )
         cart = ecommerce.cart.create_cart()
         ecommerce.cart.add_to_cart("prod_camiseta_basica", quantity=1)
@@ -184,11 +187,8 @@ def test_ecommerce_financial_mcp_flow(tmp_path: Path) -> None:
         assert invoice["status"] == "COMPLETED"
         assert invoice["amount"] == "109.90"
 
-        order = ecommerce.order.confirm_order_after_payment(
-            checkout.checkout_id,
-            instructions.payment_id,
-            invoice["transaction_id"],
-            invoice["invoice_id"],
+        order = ecommerce.order.confirm_order(
+            checkout.checkout_id, instructions.payment_id
         )
         assert order.status == "confirmed"
         assert (

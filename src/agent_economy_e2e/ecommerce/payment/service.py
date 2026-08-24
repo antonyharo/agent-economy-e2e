@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -39,13 +40,11 @@ class PaymentService(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def simulate_payment(self, payment_id: str) -> PaymentStatusView:
+    def reconcile_payment(self, payment_id: str) -> Payment:
         raise NotImplementedError
 
     @abstractmethod
-    def mark_external_payment_paid(
-        self, payment_id: str, transaction_id: str, invoice_id: str
-    ) -> Payment:
+    def simulate_payment(self, payment_id: str) -> PaymentStatusView:
         raise NotImplementedError
 
 
@@ -91,6 +90,9 @@ class SimulatedPixPaymentService(PaymentService):
             raise NotFoundError(f"Payment not found: {payment_id}")
         return payment
 
+    def reconcile_payment(self, payment_id: str) -> Payment:
+        return self.get_payment(payment_id)
+
     def simulate_payment(self, payment_id: str) -> PaymentStatusView:
         payment = self.get_payment(payment_id)
         if payment.status == PaymentStatus.PAID:
@@ -105,16 +107,6 @@ class SimulatedPixPaymentService(PaymentService):
         checkout.payment_id = saved.id
         self._checkouts.save(checkout)
         return self._to_status(saved)
-
-    def mark_external_payment_paid(
-        self, payment_id: str, transaction_id: str, invoice_id: str
-    ) -> Payment:
-        payment = self.get_payment(payment_id)
-        if payment.transaction_id != transaction_id:
-            raise ValidationError("transaction_id does not match payment")
-        payment.invoice_id = invoice_id
-        payment.status = PaymentStatus.PAID
-        return self._repository.save(payment)
 
     def _to_instructions(self, payment: Payment) -> PaymentInstructions:
         return PaymentInstructions(
@@ -189,7 +181,29 @@ class RealPixPaymentService(SimulatedPixPaymentService):
         except (HTTPError, URLError, TimeoutError) as exc:
             raise ValidationError(f"Mini Pix request failed: {exc}") from exc
 
-    
+    def reconcile_payment(self, payment_id: str) -> Payment:
+        payment = self.get_payment(payment_id)
+        charge = self._get_charge(payment.pix_code)
+        if charge["pix_code"] != payment.pix_code:
+            raise ValidationError("Mini Bank returned a different pix_code")
+        if charge["transaction_id"] != payment.transaction_id:
+            raise ValidationError("transaction_id does not match payment")
+        if Decimal(str(charge["amount"])) != Decimal(str(payment.amount)):
+            raise ValidationError("Paid amount does not match payment")
+        if charge["status"] == "COMPLETED":
+            payment.status = PaymentStatus.PAID
+        elif charge["status"] == "FAILED":
+            payment.status = PaymentStatus.FAILED
+        return self._repository.save(payment)
+
+    def _get_charge(self, pix_code: str) -> dict[str, Any]:
+        request = Request(f"{self._mini_bank_url.rstrip('/')}/charges/{pix_code}")
+        try:
+            with urlopen(request, timeout=5) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError) as exc:
+            raise ValidationError(f"Mini Bank request failed: {exc}") from exc
+
     def _to_instructions(self, payment: Payment) -> PaymentInstructions:
         return PaymentInstructions(
             payment_id=payment.id,

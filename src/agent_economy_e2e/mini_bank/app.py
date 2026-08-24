@@ -157,6 +157,11 @@ def create_pix_charge(
     )
 
 
+def get_pix_charge(pix_code: str, pix_url: str | None = None) -> dict[str, Any]:
+    base_url = pix_url or os.environ.get("MINI_PIX_URL", DEFAULT_PIX_URL)
+    return _pix_request(base_url, "/resolve", {"pix_code": pix_code})
+
+
 def pay_pix(
     pix_code: str,
     payer_account_id: str,
@@ -166,7 +171,7 @@ def pay_pix(
 ) -> dict[str, Any]:
     directory = data_dir or DEFAULT_DATA_DIR
     base_url = pix_url or os.environ.get("MINI_PIX_URL", DEFAULT_PIX_URL)
-    charge = _pix_request(base_url, "/resolve", {"pix_code": pix_code})
+    charge = get_pix_charge(pix_code, base_url)
     charge_amount = Decimal(charge["amount"])
     if charge_amount != amount:
         raise ValueError("amount does not match charge")
@@ -243,6 +248,13 @@ def create_app(data_dir: Path | None = None, pix_url: str | None = None) -> Fast
             )
         except ValueError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @api.get("/charges/{pix_code}")
+    def get_charge(pix_code: str) -> dict[str, Any]:
+        try:
+            return get_pix_charge(pix_code, pix_url)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @api.post("/payments/pix")
     def payment(request: PixPayment) -> dict[str, Any]:

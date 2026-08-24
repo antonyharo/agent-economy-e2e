@@ -84,7 +84,6 @@ uv run pytest
 | `get_payment_status`                                                   | Estado do pagamento                                      |
 | `simulate_pix_payment`                                                 | Sandbox: marca o PIX como pago                           |
 | `confirm_order`                                                        | Confirma o pedido se o pagamento estiver `paid`          |
-| `confirm_order_after_payment`                                          | Confirma o pedido com transaction/invoice do Gateway     |
 
 Preços e totais são sempre calculados pelo servidor. O agente não informa valor de pagamento nem sobrescreve o total.
 

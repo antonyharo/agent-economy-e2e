@@ -20,7 +20,6 @@ class Payment(BaseModel):
     currency: str = "BRL"
     pix_code: str
     transaction_id: str | None = None
-    invoice_id: str | None = None
     status: PaymentStatus = PaymentStatus.PENDING
 
 

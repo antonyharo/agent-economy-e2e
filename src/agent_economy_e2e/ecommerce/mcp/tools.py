@@ -139,20 +139,3 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
         return _dump(
             app.order.confirm_order(checkout_id=checkout_id, payment_id=payment_id)
         )
-
-    @mcp.tool()
-    def confirm_order_after_payment(
-        checkout_id: str,
-        payment_id: str,
-        transaction_id: str,
-        invoice_id: str,
-    ) -> dict[str, Any]:
-        """Confirm an order using identifiers returned by the external payment gateway."""
-        return _dump(
-            app.order.confirm_order_after_payment(
-                checkout_id=checkout_id,
-                payment_id=payment_id,
-                transaction_id=transaction_id,
-                invoice_id=invoice_id,
-            )
-        )
