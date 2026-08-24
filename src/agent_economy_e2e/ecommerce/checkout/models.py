@@ -25,17 +25,14 @@ class ShippingAddress(BaseModel):
 class CheckoutItem(BaseModel):
     product_id: str
     variant_id: str | None = None
-    name: str
     unit_price: float
     quantity: int
-    currency: str = "BRL"
 
 
 class Checkout(BaseModel):
     id: str
     cart_id: str
     items: list[CheckoutItem]
-    shipping_address: ShippingAddress
     shipping_option: str
     payment_method: str
     subtotal: float

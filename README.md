@@ -154,13 +154,14 @@ O log contém timestamps, descrições das ações, requisições e respostas MC
 
 ## Configuração
 
-| Variável             | Uso                                      | Padrão                  |
-| -------------------- | ---------------------------------------- | ----------------------- |
-| `ECOMMERCE_DATA_DIR` | Diretório dos JSONs do Ecommerce MCP.    | `data/ecommerce`        |
-| `MINI_BANK_DATA_DIR` | Diretório dos JSONs do Mini Bank.        | `data/mini-bank`        |
-| `MINI_PIX_DATA_DIR`  | Diretório dos JSONs do Mini Pix.         | `data/mini-pix`         |
-| `MINI_BANK_URL`      | URL do Mini Bank usada pelo Gateway MCP. | Definida pelo ambiente  |
-| `MINI_PIX_URL`       | URL financeira usada pelos serviços.     | `http://127.0.0.1:8001` |
+| Variável                   | Uso                                          | Padrão                  |
+| -------------------------- | -------------------------------------------- | ----------------------- |
+| `ECOMMERCE_DATA_DIR`       | Diretório dos JSONs do Ecommerce MCP.        | `data/ecommerce`        |
+| `MINI_BANK_DATA_DIR`       | Diretório dos JSONs do Mini Bank.            | `data/mini-bank`        |
+| `MINI_PIX_DATA_DIR`        | Diretório dos JSONs do Mini Pix.             | `data/mini-pix`         |
+| `MINI_BANK_URL`            | URL do Mini Bank usada pelo Gateway MCP.     | Definida pelo ambiente  |
+| `MINI_PIX_URL`             | URL financeira usada pelos serviços.         | `http://127.0.0.1:8001` |
+| `PAYMENT_GATEWAY_DATA_DIR` | Diretório do cadastro de agentes do Gateway. | `data/payment-gateway`  |
 
 No runner, a configuração é montada automaticamente por processo. Devido ao contrato atual do Ecommerce MCP, `MINI_PIX_URL` recebe a URL do Mini Bank nesse processo para que `confirm_order` consiga consultar a cobrança reconciliada. Em execução manual, mantenha essa mesma ligação entre Ecommerce MCP e Mini Bank.
 
@@ -169,6 +170,8 @@ No runner, a configuração é montada automaticamente por processo. Devido ao c
 O Ecommerce MCP grava coleções como `catalog.json`, `carts.json`, `checkouts.json`, `payments.json` e `orders.json` em `data/ecommerce` por padrão.
 
 O Mini Bank grava `accounts.json` em `data/mini-bank`, e o Mini Pix grava `charges.json`, `transactions.json` e `invoices.json` em `data/mini-pix`. Os caminhos podem ser substituídos pelas variáveis de ambiente correspondentes.
+
+O Payment Gateway grava `agents.json` em `data/payment-gateway`. Cada registro contém `agent_id`, `account_id`, `max_expeding_value` e `permited_categories`. Antes de encaminhar um PIX ao Mini Bank, o Gateway confirma a associação agente-conta, o limite do pagamento e as categorias permitidas. Pagamentos aprovados retornam `approved: true` e `reason`; pagamentos negados informam o motivo no erro.
 
 No runner E2E, esses arquivos permanecem no workspace entre execuções. O log continua sendo gravado em `e2e_run.log`, salvo quando outro caminho é informado com `--log`.
 
@@ -221,7 +224,7 @@ As APIs ficam disponíveis em `http://localhost:8001` (Mini Pix) e
 docker compose down
 ```
 
-## Agente LangGraph
+## Agente LangGraph com Ollama
 
 O pacote `agent_economy_e2e.agent` implementa o fluxo de compra com LangGraph. O
 LLM interpreta o pedido, enquanto o grafo controla a ordem das tools MCP e pausa
@@ -235,6 +238,24 @@ Com Mini Pix e Mini Bank em execução, use:
 uv run purchase-agent "Compre um Tenis X tamanho 42"
 ```
 
-Por padrão, o agente usa a conta `buyer` e o endereço de teste. Para outra conta
-ou endereço, informe `--payer-account-id` e `--address` como JSON. É necessário
-definir `OPENAI_API_KEY` para o nó de interpretação do pedido.
+Por padrão, o agente usa o Ollama local com o modelo `qwen3:1.7b`, a conta `buyer`
+e o endereço de teste. O modelo precisa estar instalado e o Ollama precisa estar
+rodando:
+
+```bash
+ollama serve
+ollama pull qwen3:1.7b
+```
+
+Exemplos de pedidos com um ou vários produtos:
+
+```bash
+uv run purchase-agent "compre 1 tenis x"
+uv run purchase-agent "quero comprar 2 mochilas urban e 2 tenis x"
+```
+
+O agente pesquisa cada produto no Ecommerce MCP, monta o carrinho, cria o
+checkout, chama o Payment Gateway MCP e pausa para aprovação antes do débito
+PIX. Para outra conta ou endereço, informe `--payer-account-id` e `--address`
+como JSON. É possível trocar o modelo e a URL com `OLLAMA_MODEL` e
+`OLLAMA_BASE_URL`.

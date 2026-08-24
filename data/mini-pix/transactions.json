@@ -1,52 +1,52 @@
 [
   {
-    "transaction_id": "bd540118-322d-43f5-a0f6-275202a8914e",
+    "transaction_id": "2a7eace4-f3fa-4d39-a19e-bfc6971a4692",
     "currency": "BRL",
     "status": "COMPLETED"
   },
   {
-    "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
+    "transaction_id": "d1eb1b49-a76f-4373-b934-4a105ac31d69",
     "currency": "BRL",
     "status": "COMPLETED"
   },
   {
-    "transaction_id": "dcd30fa8-8d07-414a-ac5a-d7937e7a4fa0",
-    "currency": "BRL",
-    "status": "FAILED"
-  },
-  {
-    "transaction_id": "c9f5e2a9-6205-440a-ab91-5d2be8d2d490",
-    "currency": "BRL",
-    "status": "FAILED"
-  },
-  {
-    "transaction_id": "1430e123-799d-44ab-b1c1-06da5fca6d10",
-    "currency": "BRL",
-    "status": "COMPLETED"
-  },
-  {
-    "transaction_id": "99057edd-bcb7-4491-a57d-02a6b8bce36a",
+    "transaction_id": "32e8f6dc-0164-43f7-82da-244dcd010432",
     "currency": "BRL",
     "status": "PENDING"
   },
   {
-    "transaction_id": "f96f27eb-f93d-4531-ab73-c6a70f77f857",
-    "currency": "BRL",
-    "status": "FAILED"
-  },
-  {
-    "transaction_id": "fe9c2f00-ff98-4b2a-87b3-144509b11a44",
-    "currency": "BRL",
-    "status": "FAILED"
-  },
-  {
-    "transaction_id": "471ebc97-729e-4d70-87af-fa93b35c599b",
+    "transaction_id": "e04c68fb-5874-44d9-8c70-2e7bde928d94",
     "currency": "BRL",
     "status": "PENDING"
   },
   {
-    "transaction_id": "71edb1ab-239e-4fd8-887f-3ff9c95388bd",
+    "transaction_id": "7bb25ad8-d094-413d-9bb3-3484218f31a6",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "ec1be031-41fd-466b-a61b-3b8845e63788",
     "currency": "BRL",
     "status": "FAILED"
+  },
+  {
+    "transaction_id": "dc667b93-9262-40f5-bab1-88bd34db9152",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "20e49737-3c95-437f-b14a-9fdb790ef8f2",
+    "currency": "BRL",
+    "status": "PENDING"
+  },
+  {
+    "transaction_id": "ee1698ca-6b03-44fa-934a-c4e6a5a19ee4",
+    "currency": "BRL",
+    "status": "FAILED"
+  },
+  {
+    "transaction_id": "ae4c1310-6933-4a7c-b5c9-93e83fa44227",
+    "currency": "BRL",
+    "status": "PENDING"
   }
 ]

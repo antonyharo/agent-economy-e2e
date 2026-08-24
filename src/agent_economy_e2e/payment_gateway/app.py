@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -10,6 +11,65 @@ from urllib.request import Request, urlopen
 from .models import AuthorizePaymentRequest
 
 DEFAULT_BANK_URL = "http://127.0.0.1:8000"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data" / "payment-gateway"
+
+
+def _read_agents(data_dir: Path | None = None) -> list[dict[str, Any]]:
+    path = (
+        data_dir or Path(os.environ.get("PAYMENT_GATEWAY_DATA_DIR", DEFAULT_DATA_DIR))
+    ) / "agents.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text(
+            json.dumps(
+                [
+                    {
+                        "agent_id": "default",
+                        "account_id": "buyer",
+                        "max_expeding_value": "1000.00",
+                        "permited_categories": ["acessorios", "calcados", "roupas"],
+                    }
+                ],
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    records = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(records, list):
+        raise ValueError("invalid agent registry")
+    return records
+
+
+def _validate_policy(
+    agent_id: str,
+    payer_account_id: str,
+    amount: Decimal,
+    categories: list[str],
+    data_dir: Path | None = None,
+) -> None:
+    agent = next(
+        (item for item in _read_agents(data_dir) if item.get("agent_id") == agent_id),
+        None,
+    )
+    if agent is None:
+        raise ValueError("pagamento negado: agente nao cadastrado")
+    if agent.get("account_id") != payer_account_id:
+        raise ValueError("pagamento negado: agente nao vinculado a conta")
+    try:
+        maximum = Decimal(str(agent["max_expeding_value"]))
+    except (KeyError, ArithmeticError, ValueError) as exc:
+        raise ValueError("pagamento negado: limite do agente invalido") from exc
+    if amount > maximum:
+        raise ValueError(f"pagamento negado: valor excede o limite de {maximum:.2f}")
+    permitted = {
+        str(category).lower() for category in agent.get("permited_categories", [])
+    }
+    denied = [category for category in categories if category.lower() not in permitted]
+    if denied:
+        raise ValueError(
+            f"pagamento negado: categoria nao permitida ({', '.join(denied)})"
+        )
 
 
 def _error_detail(error: HTTPError) -> str:
@@ -33,12 +93,29 @@ def authorize_payment(
     amount: Decimal,
     reference_id: str,
     bank_url: str | None = None,
+    agent_id: str = "default",
+    categories: list[str] | None = None,
+    category: str | None = None,
+    data_dir: Path | None = None,
 ) -> dict[str, Any]:
+    requested_categories = list(categories or [])
+    if category is not None:
+        requested_categories.append(category)
     request = AuthorizePaymentRequest(
+        agent_id=agent_id,
         payer_account_id=payer_account_id,
         pix_code=pix_code,
         amount=amount,
         reference_id=reference_id,
+        category=category,
+        categories=requested_categories,
+    )
+    _validate_policy(
+        request.agent_id,
+        request.payer_account_id,
+        request.amount,
+        request.categories,
+        data_dir,
     )
     payload = {
         "pix_code": request.pix_code,
@@ -53,7 +130,11 @@ def authorize_payment(
     )
     try:
         with urlopen(http_request, timeout=5) as response:
-            return json.loads(response.read().decode("utf-8"))
+            return {
+                **json.loads(response.read().decode("utf-8")),
+                "approved": True,
+                "reason": "pagamento aprovado",
+            }
     except HTTPError as exc:
         detail = _error_detail(exc)
         if exc.code == 409:

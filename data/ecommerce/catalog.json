@@ -8,9 +8,21 @@
     "available": true,
     "category": "calcados",
     "variants": [
-      { "id": "var_40", "name": "40", "available": true },
-      { "id": "var_41", "name": "41", "available": true },
-      { "id": "var_42", "name": "42", "available": true }
+      {
+        "id": "var_40",
+        "name": "40",
+        "available": true
+      },
+      {
+        "id": "var_41",
+        "name": "41",
+        "available": true
+      },
+      {
+        "id": "var_42",
+        "name": "42",
+        "available": true
+      }
     ]
   },
   {
@@ -22,8 +34,16 @@
     "available": true,
     "category": "roupas",
     "variants": [
-      { "id": "var_m", "name": "M", "available": true },
-      { "id": "var_g", "name": "G", "available": true }
+      {
+        "id": "var_m",
+        "name": "M",
+        "available": true
+      },
+      {
+        "id": "var_g",
+        "name": "G",
+        "available": true
+      }
     ]
   },
   {
@@ -44,6 +64,12 @@
     "currency": "BRL",
     "available": false,
     "category": "roupas",
-    "variants": [{ "id": "var_p", "name": "P", "available": false }]
+    "variants": [
+      {
+        "id": "var_p",
+        "name": "P",
+        "available": false
+      }
+    ]
   }
 ]

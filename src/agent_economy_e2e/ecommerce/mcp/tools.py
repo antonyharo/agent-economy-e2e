@@ -134,8 +134,18 @@ def register_tools(mcp: MCPServer, app: EcommerceApp) -> None:
 
 
     @mcp.tool()
-    def confirm_order(checkout_id: str, payment_id: str) -> dict[str, Any]:
+    def confirm_order(
+        checkout_id: str,
+        payment_id: str,
+        shipping_address: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Confirm an order only when the sandbox payment is paid and matches the checkout."""
         return _dump(
-            app.order.confirm_order(checkout_id=checkout_id, payment_id=payment_id)
+            app.order.confirm_order(
+                checkout_id=checkout_id,
+                payment_id=payment_id,
+                shipping_address=(
+                    _address(shipping_address) if shipping_address is not None else None
+                ),
+            )
         )

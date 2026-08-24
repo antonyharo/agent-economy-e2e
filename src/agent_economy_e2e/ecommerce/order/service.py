@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from agent_economy_e2e.ecommerce.cart.models import CartStatus
 from agent_economy_e2e.ecommerce.cart.service import CartService
-from agent_economy_e2e.ecommerce.checkout.models import CheckoutStatus
+from agent_economy_e2e.ecommerce.checkout.models import CheckoutStatus, ShippingAddress
 from agent_economy_e2e.ecommerce.checkout.service import CheckoutService
 from agent_economy_e2e.ecommerce.exceptions import ValidationError
 from agent_economy_e2e.ecommerce.ids import new_id
@@ -30,7 +30,12 @@ class OrderService:
         self._payments = payments
         self._carts = carts
 
-    def confirm_order(self, checkout_id: str, payment_id: str) -> OrderConfirmation:
+    def confirm_order(
+        self,
+        checkout_id: str,
+        payment_id: str,
+        shipping_address: ShippingAddress | None = None,
+    ) -> OrderConfirmation:
         checkout = self._checkouts.get_checkout(checkout_id)
         payment = self._payments.get_payment(payment_id)
 
@@ -58,7 +63,7 @@ class OrderService:
             payment_id=payment.id,
             status=OrderStatus.CONFIRMED,
             items=checkout.items,
-            shipping_address=checkout.shipping_address,
+            shipping_address=shipping_address,
             total=checkout.total,
             currency=checkout.currency,
         )
@@ -80,4 +85,5 @@ class OrderService:
             checkout_id=order.checkout_id,
             payment_id=order.payment_id,
             status=order.status,
+            shipping_address=order.shipping_address,
         )

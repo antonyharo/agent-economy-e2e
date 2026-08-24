@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import json
+import re
+import unicodedata
 
 from agent_economy_e2e.ecommerce.catalog.models import (
     Product,
@@ -66,11 +68,15 @@ class CatalogService:
             next_cursor=next_cursor,
         )
 
-    def _matches(self, product: Product, query: str, filters: ProductSearchFilters) -> bool:
-        needle = query.strip().lower()
-        if needle:
-            haystack = f"{product.name} {product.description} {product.category} {product.id}".lower()
-            if needle not in haystack:
+    def _matches(
+        self, product: Product, query: str, filters: ProductSearchFilters
+    ) -> bool:
+        query_terms = self._search_terms(query)
+        if query_terms:
+            haystack_terms = self._search_terms(
+                f"{product.name} {product.description} {product.category} {product.id}"
+            )
+            if not all(term in haystack_terms for term in query_terms):
                 return False
         if filters.category and product.category.lower() != filters.category.lower():
             return False
@@ -81,6 +87,18 @@ class CatalogService:
         if filters.available is not None and product.available != filters.available:
             return False
         return True
+
+    def _search_terms(self, value: str) -> set[str]:
+        plain = "".join(
+            character
+            for character in unicodedata.normalize("NFD", value.lower())
+            if unicodedata.category(character) != "Mn"
+        )
+        terms = set(re.findall(r"[a-z0-9]+", plain))
+        return {
+            term[:-1] if len(term) > 3 and term.endswith("s") else term
+            for term in terms
+        }
 
     def _sort(self, products: list[Product], sort: str | None) -> list[Product]:
         if sort == "price_asc":

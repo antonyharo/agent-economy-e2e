@@ -1,0 +1,12 @@
+[
+  {
+    "agent_id": "default",
+    "account_id": "buyer",
+    "max_expeding_value": "900.00",
+    "permited_categories": [
+      "acessorios",
+      "calcados",
+      "roupas"
+    ]
+  }
+]

@@ -27,6 +27,14 @@ def test_create_checkout(app: EcommerceApp) -> None:
     assert checkout.payment_method == "pix"
     assert checkout.status == "payment_pending"
 
+    stored = app.checkout.get_checkout(checkout.checkout_id)
+    assert stored.items[0].model_dump() == {
+        "product_id": "prod_tenis_x",
+        "variant_id": None,
+        "unit_price": 799.9,
+        "quantity": 1,
+    }
+
 
 def test_checkout_is_a_snapshot(app: EcommerceApp) -> None:
     cart_id = _cart_with_item(app)

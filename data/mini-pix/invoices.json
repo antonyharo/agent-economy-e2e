@@ -1,21 +1,14 @@
 [
   {
-    "invoice_id": "invoice-47536fa75e58",
-    "transaction_id": "bd540118-322d-43f5-a0f6-275202a8914e",
+    "invoice_id": "invoice-14a953e83916",
+    "transaction_id": "2a7eace4-f3fa-4d39-a19e-bfc6971a4692",
     "amount": "819.90",
     "currency": "BRL",
     "status": "COMPLETED"
   },
   {
-    "invoice_id": "invoice-3fe5a22ead32",
-    "transaction_id": "654751ee-c140-4a89-a3ac-885c9160d9f1",
-    "amount": "819.90",
-    "currency": "BRL",
-    "status": "COMPLETED"
-  },
-  {
-    "invoice_id": "invoice-fae21c99fc0f",
-    "transaction_id": "1430e123-799d-44ab-b1c1-06da5fca6d10",
+    "invoice_id": "invoice-17ad8a804908",
+    "transaction_id": "d1eb1b49-a76f-4373-b934-4a105ac31d69",
     "amount": "819.90",
     "currency": "BRL",
     "status": "COMPLETED"

@@ -17,7 +17,7 @@ class Order(BaseModel):
     payment_id: str
     status: OrderStatus = OrderStatus.CONFIRMED
     items: list[CheckoutItem] = Field(default_factory=list)
-    shipping_address: ShippingAddress
+    shipping_address: ShippingAddress | None = None
     total: float
     currency: str = "BRL"
 
@@ -27,3 +27,4 @@ class OrderConfirmation(BaseModel):
     checkout_id: str
     payment_id: str
     status: OrderStatus
+    shipping_address: ShippingAddress | None = None

@@ -47,10 +47,8 @@ class CheckoutService:
             CheckoutItem(
                 product_id=item.product_id,
                 variant_id=item.variant_id,
-                name=item.name,
                 unit_price=item.unit_price,
                 quantity=item.quantity,
-                currency=item.currency,
             )
             for item in totals.items
         ]
@@ -58,7 +56,6 @@ class CheckoutService:
             id=new_id("chk"),
             cart_id=cart.id,
             items=snapshot_items,
-            shipping_address=shipping_address,
             shipping_option=shipping_option,
             payment_method=payment_method,
             subtotal=totals.subtotal,

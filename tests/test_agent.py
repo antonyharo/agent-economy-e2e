@@ -2,12 +2,44 @@ import asyncio
 from typing import Any
 
 from agent_economy_e2e.agent import cli
-from agent_economy_e2e.agent.graph import _after_authorize_payment, _nodes
+from agent_economy_e2e.agent.graph import (
+    _after_authorize_payment,
+    _clean_product_query,
+    _fallback_purchase_items,
+    _nodes,
+    _requested_quantity,
+    _search_terms,
+)
 
 
 class FakeModel:
     def with_structured_output(self, model: Any) -> "FakeModel":
         return self
+
+
+class PlannedModel:
+    def with_structured_output(self, model: Any) -> "PlannedModel":
+        return self
+
+    async def ainvoke(self, messages: Any) -> Any:
+        return type(
+            "PlannedRequest",
+            (),
+            {
+                "model_dump": lambda self: {
+                    "items": [
+                        {"product_query": "mochila urban", "quantity": 2, "variant_id": None},
+                        {"product_query": "tenis x", "quantity": 2, "variant_id": None},
+                    ],
+                    "product_query": "",
+                    "quantity": 1,
+                    "variant_id": None,
+                    "shipping_address": {},
+                    "shipping_option": "standard",
+                    "payer_account_id": "",
+                }
+            },
+        )()
 
 
 class FailingPaymentTool:
@@ -62,6 +94,94 @@ def test_authorize_payment_returns_structured_business_error() -> None:
         ),
     }
     assert _after_authorize_payment(result) == "__end__"
+
+
+def test_product_query_removes_purchase_details_before_catalog_search() -> None:
+    assert _clean_product_query("Compre dois Tenis X tamanho 42") == "Tenis X"
+    assert _clean_product_query("Compre duas mochilas urban") == "mochilas urban"
+    assert _search_terms("mochilas urban") == {"mochila", "urban"}
+    assert _requested_quantity("Compre quatro Tenis X tamanho 42") == 4
+    assert _requested_quantity("Compre Tenis X tamanho 42") is None
+    assert _fallback_purchase_items("quero comprar 2 mochilas urban e 2 tenis x") == [
+        {"product_query": "mochilas urban", "quantity": 2, "variant_id": None},
+        {"product_query": "tenis x", "quantity": 2, "variant_id": None},
+    ]
+
+
+def test_plan_request_preserves_multiple_products() -> None:
+    nodes = _nodes({}, PlannedModel())
+
+    result = asyncio.run(
+        nodes["plan_request"](
+            {
+                "user_request": "quero comprar 2 mochilas urban e 2 tenis x",
+                "shipping_address": {},
+                "payer_account_id": "buyer",
+            }
+        )
+    )
+
+    assert result["items"] == [
+        {"product_query": "mochilas urban", "quantity": 2, "variant_id": None},
+        {"product_query": "tenis x", "quantity": 2, "variant_id": None},
+    ]
+
+
+def test_add_to_cart_adds_each_planned_product() -> None:
+    add_to_cart = ReturningTool({"id": "cart-123", "items": []})
+    nodes = _nodes({"add_to_cart": add_to_cart}, FakeModel())
+
+    result = asyncio.run(
+        nodes["add_to_cart"](
+            {
+                "resolved_items": [
+                    {"product_id": "prod_mochila_urban", "quantity": 2, "variant_id": None},
+                    {"product_id": "prod_tenis_x", "quantity": 2, "variant_id": None},
+                ]
+            }
+        )
+    )
+
+    assert result["cart"]["id"] == "cart-123"
+    assert add_to_cart.calls == 2
+
+
+def test_public_payment_messages_are_compact() -> None:
+    approval = cli._approval_message(
+        {
+            "checkout_id": "chk-123",
+            "items": [{"name": "Tenis X", "quantity": 1, "unit_price": 799.9}],
+            "amount": 819.9,
+            "payment_method": "pix",
+            "pix_code": "PIX-123",
+        }
+    )
+    assert approval == {
+        "type": "payment_approval",
+        "items": [{"name": "Tenis X", "quantity": 1, "unit_price": 799.9}],
+        "total": 819.9,
+        "payment_method": "pix",
+        "pix_code": "PIX-123",
+    }
+
+    assert cli._public_result(
+        {
+            "status": "completed",
+            "cart": {"id": "cart-123"},
+            "payment": {"status": "COMPLETED"},
+            "order": {
+                "order_id": "ord-123",
+                "status": "confirmed",
+                "shipping_address": {"city": "Sao Paulo"},
+            },
+        }
+    ) == {
+        "order": {
+            "order_id": "ord-123",
+            "status": "confirmed",
+            "shipping_address": {"city": "Sao Paulo"},
+        }
+    }
 
 
 def test_ensure_cart_reuses_existing_cart() -> None:

@@ -20,14 +20,20 @@ class PaymentGatewayMCP(MCPServer):
             pix_code: str,
             amount: str,
             reference_id: str,
+            agent_id: str = "default",
+            categories: list[str] | None = None,
+            category: str | None = None,
         ) -> dict[str, Any]:
-            """Authorize a BRL PIX payment through Mini Bank."""
+            """Authorize a BRL PIX payment after validating the agent policy."""
             return send_payment(
                 payer_account_id=payer_account_id,
                 pix_code=pix_code,
                 amount=Decimal(amount),
                 reference_id=reference_id,
                 bank_url=resolved_url,
+                agent_id=agent_id,
+                categories=categories,
+                category=category,
             )
 
 

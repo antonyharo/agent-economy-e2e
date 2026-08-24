@@ -1,6 +1,6 @@
 [
   {
-    "id": "cart_15d642794ed2",
+    "id": "cart_dd78c083dadf",
     "agent_id": "default",
     "status": "checked_out",
     "items": [
@@ -15,7 +15,7 @@
     ]
   },
   {
-    "id": "cart_9a59f7645c12",
+    "id": "cart_4d5faf903b29",
     "agent_id": "default",
     "status": "checked_out",
     "items": [
@@ -30,31 +30,24 @@
     ]
   },
   {
-    "id": "cart_9a4bc4652366",
-    "agent_id": "default",
-    "status": "checked_out",
-    "items": [
-      {
-        "product_id": "prod_tenis_x",
-        "variant_id": "var_42",
-        "name": "Tênis X",
-        "unit_price": 799.9,
-        "quantity": 1,
-        "currency": "BRL"
-      }
-    ]
-  },
-  {
-    "id": "cart_0ce6c838b009",
+    "id": "cart_bd529acafa8e",
     "agent_id": "default",
     "status": "active",
     "items": [
       {
+        "product_id": "prod_mochila_urban",
+        "variant_id": null,
+        "name": "Mochila Urban",
+        "unit_price": 249.0,
+        "quantity": 2,
+        "currency": "BRL"
+      },
+      {
         "product_id": "prod_tenis_x",
         "variant_id": "var_42",
         "name": "Tênis X",
         "unit_price": 799.9,
-        "quantity": 1,
+        "quantity": 2,
         "currency": "BRL"
       }
     ]

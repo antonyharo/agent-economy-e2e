@@ -20,7 +20,7 @@ from agent_economy_e2e.mini_pix.app import (
     resolve_pix_code,
 )
 from agent_economy_e2e.mini_pix.app import create_app as create_pix_app
-from agent_economy_e2e.payment_gateway.app import authorize_payment
+from agent_economy_e2e.payment_gateway.app import _validate_policy, authorize_payment
 from agent_economy_e2e.payment_gateway.server import build_server
 from tests.helpers import ADDRESS
 
@@ -141,6 +141,8 @@ def test_payment_flow_uses_mini_bank_and_mini_pix_over_http(tmp_path: Path) -> N
             f"http://127.0.0.1:{bank_port}",
         )
         assert invoice["status"] == "COMPLETED"
+        assert invoice["approved"] is True
+        assert invoice["reason"] == "pagamento aprovado"
         assert retry_invoice["invoice_id"] == invoice["invoice_id"]
         assert check_balance("buyer", bank_dir).balance == Decimal("75.00")
         assert check_balance("seller", bank_dir).balance == Decimal("75.00")
@@ -176,6 +178,22 @@ def test_gateway_propagates_payment_decline_reason(tmp_path: Path) -> None:
         pix_server.should_exit = True
         bank_thread.join(timeout=5)
         pix_thread.join(timeout=5)
+
+
+def test_gateway_validates_agent_account_limit_and_categories(tmp_path: Path) -> None:
+    (tmp_path / "agents.json").write_text(
+        '[{"agent_id": "agent-1", "account_id": "buyer", '
+        '"max_expeding_value": "100.00", '
+        '"permited_categories": ["acessorios"]}]',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="nao vinculado a conta"):
+        _validate_policy("agent-1", "seller", Decimal("10.00"), [], tmp_path)
+    with pytest.raises(ValueError, match="excede o limite"):
+        _validate_policy("agent-1", "buyer", Decimal("100.01"), [], tmp_path)
+    with pytest.raises(ValueError, match="categoria nao permitida"):
+        _validate_policy("agent-1", "buyer", Decimal("10.00"), ["calcados"], tmp_path)
 
 
 def test_ecommerce_financial_mcp_flow(tmp_path: Path) -> None:
