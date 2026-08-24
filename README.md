@@ -1,21 +1,23 @@
-# Ecommerce MCP sandbox (agent-ready)
+# Ecommerce MCP sandbox
 
-MVP de um servidor MCP de ecommerce em Python. O servidor expõe tools para catálogo, carrinho, checkout, cobrança PIX via Mini Pix e pedido. Persistência em arquivos JSON. Sem autenticação e sem frontend.
+Sandbox de ecommerce orientado a agentes, implementado em Python. A aplicação expõe operações de catálogo, carrinho, checkout, cobrança PIX e confirmação de pedido através de MCP. A persistência é feita em arquivos JSON e não há autenticação nem frontend.
 
-O SDK MCP 2.x usa `MCPServer` (sucessor do FastMCP do SDK oficial).
+O projeto também inclui uma infraestrutura financeira local composta por Mini Bank, Mini Pix e Payment Gateway.
 
 ## Requisitos
 
 - Python 3.13+
-- [uv](https://docs.astral.sh/uv/) (recomendado) ou `pip`
+- [uv](https://docs.astral.sh/uv/) recomendado, ou `pip`
 
 ## Instalação
+
+Com `uv`:
 
 ```bash
 uv sync --extra dev
 ```
 
-Com pip:
+Com `pip`:
 
 ```bash
 python -m venv .venv
@@ -23,9 +25,49 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-## Executar o servidor MCP
+## Funcionalidades
 
-O servidor usa transporte stdio (padrão MCP):
+- Busca de produtos com consulta, filtros, ordenação, limite e paginação por cursor.
+- Criação e consulta de um carrinho ativo por agente.
+- Inclusão, atualização, remoção e limpeza de itens do carrinho.
+- Cálculo server-side de subtotal, frete, desconto e total.
+- Criação de checkout como snapshot do carrinho.
+- Pagamento por PIX real através do Mini Pix e do Payment Gateway.
+- Confirmação do pedido somente depois da reconciliação do pagamento.
+- Operações idempotentes no processamento financeiro.
+- Dados de catálogo inicializados a partir de `seed_catalog.json`.
+
+Os preços e totais são calculados pelo servidor. O agente não pode sobrescrever o valor do produto ou do pagamento.
+
+## Tools MCP
+
+O servidor Ecommerce MCP usa transporte stdio e registra estas tools:
+
+| Tool                       | Função                                          |
+| -------------------------- | ----------------------------------------------- |
+| `search_products`          | Busca produtos no catálogo.                     |
+| `get_cart`                 | Retorna o carrinho ativo.                       |
+| `create_cart`              | Cria um carrinho ativo.                         |
+| `add_to_cart`              | Adiciona um produto disponível.                 |
+| `update_cart_item`         | Atualiza a quantidade de um item.               |
+| `remove_from_cart`         | Remove um item.                                 |
+| `clear_cart`               | Remove todos os itens.                          |
+| `calculate_cart`           | Calcula os valores do carrinho.                 |
+| `create_checkout`          | Cria um checkout com endereço e opção de frete. |
+| `get_payment_instructions` | Cria ou recupera a cobrança PIX.                |
+| `confirm_order`            | Confirma o pedido com pagamento aprovado.       |
+
+O Payment Gateway MCP registra uma tool:
+
+| Tool                | Função                                          |
+| ------------------- | ----------------------------------------------- |
+| `authorize_payment` | Autoriza um pagamento PIX através do Mini Bank. |
+
+O método de pagamento aceito pelo checkout MCP é `pix`.
+
+## Modo 1: servidor Ecommerce MCP
+
+Inicie o servidor via entry point:
 
 ```bash
 uv run ecommerce-mcp
@@ -38,18 +80,7 @@ uv run python -m agent_economy_e2e
 uv run app
 ```
 
-Diretório de dados (catálogo seed + JSON de runtime):
-
-```bash
-set ECOMMERCE_DATA_DIR=data
-uv run ecommerce-mcp
-```
-
-Na primeira execução o seed do catálogo é copiado para `catalog.json` nesse diretório.
-
-### Cursor / cliente MCP
-
-Exemplo de configuração:
+Exemplo de configuração para um cliente MCP:
 
 ```json
 {
@@ -65,39 +96,15 @@ Exemplo de configuração:
 }
 ```
 
-## Testes
+## Modo 2: infraestrutura financeira manual
 
-```bash
-uv run pytest
-```
-
-## Tools MCP
-
-| Tool                                                                   | Função                                                   |
-| ---------------------------------------------------------------------- | -------------------------------------------------------- |
-| `search_products`                                                      | Busca somente leitura no catálogo (cursor pagination)    |
-| `create_cart` / `get_cart`                                             | Um cart ativo por agente                                 |
-| `add_to_cart` / `update_cart_item` / `remove_from_cart` / `clear_cart` | Mutação do cart                                          |
-| `calculate_cart`                                                       | Subtotal, frete, desconto e total calculados no servidor |
-| `create_checkout`                                                      | Snapshot da compra (`payment_method` apenas `pix`)       |
-| `get_payment_instructions`                                             | Cria ou retorna uma cobrança real no Mini Pix            |
-| `get_payment_status`                                                   | Estado do pagamento                                      |
-| `simulate_pix_payment`                                                 | Sandbox: marca o PIX como pago                           |
-| `confirm_order`                                                        | Confirma o pedido se o pagamento estiver `paid`          |
-
-Preços e totais são sempre calculados pelo servidor. O agente não informa valor de pagamento nem sobrescreve o total.
-
-## Infraestrutura financeira
-
-A infraestrutura financeira é independente do ecommerce e tem três processos:
+A infraestrutura financeira possui três processos:
 
 ```text
-Payment Gateway (MCP) -> Mini Bank (HTTP) -> Mini Pix (HTTP interno)
+Payment Gateway (MCP) -> Mini Bank (HTTP) -> Mini Pix (HTTP)
 ```
 
-O Mini Bank movimenta saldo em BRL. O Mini Pix gerencia charges, transactions e invoices; ele nunca altera saldos. O Gateway valida os parâmetros e chama somente o Mini Bank.
-
-Inicie cada componente em um terminal separado:
+Em terminais separados, execute:
 
 ```bash
 uv run python -m agent_economy_e2e.mini_pix.app
@@ -105,31 +112,90 @@ uv run python -m agent_economy_e2e.mini_bank.app
 uv run payment-gateway-mcp
 ```
 
-Os serviços escutam em `127.0.0.1:8001`, `127.0.0.1:8000` e transporte MCP stdio, respectivamente. Para alterar os diretórios JSON ou a URL interna, use `MINI_PIX_DATA_DIR`, `MINI_BANK_DATA_DIR`, `MINI_PIX_URL` e `MINI_BANK_URL`.
+Por padrão:
 
-Exemplo de fluxo E2E:
+- Mini Pix escuta em `127.0.0.1:8001`.
+- Mini Bank escuta em `127.0.0.1:8000`.
+- Payment Gateway usa transporte MCP stdio.
+
+O Mini Bank movimenta saldos em BRL. O Mini Pix administra cobranças, transações e invoices, mas não altera saldos. O Gateway valida a solicitação e encaminha o pagamento ao Mini Bank.
+
+## Modo 3: fluxo E2E automatizado
+
+O runner [src/run.py](src/run.py) inicia automaticamente Mini Pix, Mini Bank, Ecommerce MCP e Payment Gateway MCP. Em seguida executa:
 
 ```text
-authorize_payment("buyer", "PIX-TEST-SELLER-25", Decimal("25.00"), "payment-1")
-  -> Mini Bank resolve a cobrança no Mini Pix
-  -> verifica buyer = 100.00
-  -> debita buyer e credita seller
-  -> Mini Pix completa a transaction e gera a invoice
-  -> buyer = 75.00, seller = 75.00
+search_products
+ -> create_cart
+ -> add_to_cart
+ -> calculate_cart
+ -> create_checkout
+ -> get_payment_instructions
+ -> authorize_payment
+ -> confirm_order
 ```
 
-Para executar todos os testes, incluindo os financeiros:
+Execute a partir da raiz do projeto:
+
+```bash
+uv run python src/run.py
+```
+
+O runner escolhe portas livres, cria dados financeiros isolados e usa saldo suficiente para o comprador. O diretório de dados é temporário e removido quando a execução termina.
+
+Por padrão, cada execução grava um log detalhado em `e2e_run.log`. É possível escolher outro arquivo:
+
+```bash
+uv run python src/run.py --log logs/meu-fluxo.txt
+```
+
+O log contém timestamps, descrições das ações, requisições e respostas MCP, requisições e respostas HTTP, erros e ciclo de vida dos processos.
+
+## Configuração
+
+| Variável             | Uso                                      | Padrão                      |
+| -------------------- | ---------------------------------------- | --------------------------- |
+| `ECOMMERCE_DATA_DIR` | Diretório dos JSONs do Ecommerce MCP.    | `data`                      |
+| `MINI_BANK_DATA_DIR` | Diretório dos JSONs do Mini Bank.        | `data` relativo ao processo |
+| `MINI_PIX_DATA_DIR`  | Diretório dos JSONs do Mini Pix.         | `data` relativo ao processo |
+| `MINI_BANK_URL`      | URL do Mini Bank usada pelo Gateway MCP. | Definida pelo ambiente      |
+| `MINI_PIX_URL`       | URL financeira usada pelos serviços.     | `http://127.0.0.1:8001`     |
+
+No runner, a configuração é montada automaticamente por processo. Devido ao contrato atual do Ecommerce MCP, `MINI_PIX_URL` recebe a URL do Mini Bank nesse processo para que `confirm_order` consiga consultar a cobrança reconciliada. Em execução manual, mantenha essa mesma ligação entre Ecommerce MCP e Mini Bank.
+
+## Persistência
+
+O Ecommerce MCP grava coleções como `catalog.json`, `carts.json`, `checkouts.json`, `payments.json` e `orders.json` no diretório definido por `ECOMMERCE_DATA_DIR`.
+
+O Mini Bank grava `accounts.json`. O Mini Pix grava `charges.json`, `transactions.json` e `invoices.json` no diretório definido por suas variáveis de ambiente.
+
+No runner E2E, esses arquivos ficam em um diretório temporário. Apenas o log permanece no workspace, salvo quando outro caminho é informado com `--log`.
+
+## Fluxo financeiro
+
+```text
+get_payment_instructions
+ -> Mini Bank POST /charges
+ -> Mini Pix POST /charges
+ -> authorize_payment
+ -> Mini Bank POST /payments/pix
+ -> Mini Pix POST /resolve, /complete e /invoices
+ -> confirm_order
+ -> Mini Bank GET /charges/{pix_code}
+```
+
+O pedido só é confirmado se o pagamento pertencer ao checkout, estiver pago e tiver o mesmo valor do checkout.
+
+## Dados de catálogo
+
+Os produtos iniciais estão em [src/agent_economy_e2e/ecommerce/database/seed_catalog.json](src/agent_economy_e2e/ecommerce/database/seed_catalog.json). O catálogo inclui Tênis X, Camiseta Básica, Mochila Urban e um produto indisponível.
+
+## Testes
+
+Execute todos os testes com:
 
 ```bash
 uv run pytest
 ```
 
-## Fluxo
-
-`Cart` → `Checkout` (snapshot) → `Payment` (cobrança Mini Pix) → `Order`
-
-Pagamento é abstraído em `PaymentService`. A aplicação MCP usa `RealPixPaymentService`; `SimulatedPixPaymentService` permanece disponível para compatibilidade dos testes e do fluxo legado.
-
-## Dados seed
-
-Produtos de demonstração em `src/agent_economy_e2e/ecommerce/database/seed_catalog.json` (Tênis X, Camiseta Básica, Mochila Urban e um item indisponível).
+Os testes cobrem catálogo, carrinho, checkout, pagamento, pedidos, integração financeira e registro das tools MCP.

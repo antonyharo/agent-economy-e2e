@@ -1,0 +1,26 @@
+[
+  {
+    "id": "buyer-001",
+    "bank_code": "MINI_BANK",
+    "holder_name": "Sandbox Buyer",
+    "balance": "1000.00",
+    "status": "ACTIVE",
+    "currency": "BRL"
+  },
+  {
+    "id": "seller-001",
+    "bank_code": "MINI_BANK",
+    "holder_name": "Sandbox Seller",
+    "balance": "0.00",
+    "status": "ACTIVE",
+    "currency": "BRL"
+  },
+  {
+    "id": "blocked-001",
+    "bank_code": "MINI_BANK",
+    "holder_name": "Blocked Account",
+    "balance": "50.00",
+    "status": "BLOCKED",
+    "currency": "BRL"
+  }
+]
