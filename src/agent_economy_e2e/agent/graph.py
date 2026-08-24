@@ -137,6 +137,8 @@ class PurchaseState(TypedDict, total=False):
     totals: dict[str, Any]
     checkout: dict[str, Any]
     instructions: dict[str, Any]
+    payment_policy: dict[str, Any]
+    human_approved: bool
     payment: dict[str, Any]
     order: dict[str, Any]
     status: Literal["running", "awaiting_approval", "cancelled", "completed"]
@@ -333,13 +335,40 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         instructions = await tools["get_payment_instructions"].ainvoke(
             {"checkout_id": checkout["checkout_id"]}
         )
-        return {"instructions": instructions, "status": "awaiting_approval"}
+        categories = sorted(
+            {
+                item.get("category", "")
+                for item in state.get("resolved_items", [])
+                if item.get("category")
+            }
+        )
+        try:
+            policy = await tools["evaluate_payment"].ainvoke(
+                {
+                    "payer_account_id": state.get("payer_account_id", ""),
+                    "amount": f"{instructions['amount']:.2f}",
+                    "agent_id": state.get("agent_id", "default"),
+                    "categories": categories,
+                }
+            )
+        except RuntimeError as exc:
+            return {"status": "cancelled", "error": str(exc)}
+        return {
+            "instructions": instructions,
+            "payment_policy": policy,
+            "status": "awaiting_approval"
+            if policy.get("requires_human_approval")
+            else "running",
+        }
 
     def request_approval(state: PurchaseState) -> dict[str, Any]:
         instructions = state.get("instructions")
         checkout = state.get("checkout")
         if instructions is None or checkout is None:
             raise ValueError("As instrucoes de pagamento nao foram geradas.")
+        policy = state.get("payment_policy", {})
+        if not policy.get("requires_human_approval"):
+            return {"status": "running", "human_approved": False}
         decision = interrupt(
             {
                 "type": "payment_approval",
@@ -348,10 +377,12 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
                 "amount": instructions["amount"],
                 "payment_method": instructions["method"],
                 "pix_code": instructions["pix_code"],
+                "reason": policy.get("reason"),
+                "checkout": checkout,
             }
         )
         if decision is True or decision == {"approved": True}:
-            return {"status": "running"}
+            return {"status": "running", "human_approved": True}
         return {"status": "cancelled", "error": "Pagamento cancelado pelo usuario."}
 
     async def authorize_payment(state: PurchaseState) -> dict[str, Any]:
@@ -361,6 +392,28 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
         checkout = state.get("checkout")
         if instructions is None or payer_account_id is None or checkout is None:
             raise ValueError("Dados insuficientes para autorizar o pagamento.")
+        human_approved = state.get("human_approved", False)
+        policy = state.get("payment_policy", {})
+        if policy.get("requires_human_approval") and not human_approved:
+            decision = interrupt(
+                {
+                    "type": "payment_approval",
+                    "question": "Deseja aprovar este pagamento? (sim/nao)",
+                    "checkout_id": checkout["checkout_id"],
+                    "items": state.get("cart", {}).get("items", []),
+                    "amount": instructions["amount"],
+                    "payment_method": instructions["method"],
+                    "pix_code": instructions["pix_code"],
+                    "reason": policy.get("reason"),
+                    "checkout": checkout,
+                }
+            )
+            if decision is not True and decision != {"approved": True}:
+                return {
+                    "status": "cancelled",
+                    "error": "Pagamento cancelado pelo usuario.",
+                }
+            human_approved = True
         try:
             payment = await tools["authorize_payment"].ainvoke(
                 {
@@ -376,6 +429,7 @@ def _nodes(tools: dict[str, Any], model: BaseChatModel) -> dict[str, Any]:
                             if item.get("category")
                         }
                     ),
+                    "human_approved": human_approved,
                 }
             )
         except RuntimeError as exc:
@@ -405,6 +459,10 @@ def _after_search(state: PurchaseState) -> str:
 
 def _after_approval(state: PurchaseState) -> str:
     return END if state.get("status") == "cancelled" else "authorize_payment"
+
+
+def _after_policy(state: PurchaseState) -> str:
+    return END if state.get("status") == "cancelled" else "request_approval"
 
 
 def _after_authorize_payment(state: PurchaseState) -> str:
@@ -448,7 +506,11 @@ def build_purchase_graph(
     graph.add_edge("add_to_cart", "calculate_cart")
     graph.add_edge("calculate_cart", "create_checkout")
     graph.add_edge("create_checkout", "get_payment_instructions")
-    graph.add_edge("get_payment_instructions", "request_approval")
+    graph.add_conditional_edges(
+        "get_payment_instructions",
+        _after_policy,
+        {"request_approval": "request_approval", END: END},
+    )
     graph.add_conditional_edges(
         "request_approval",
         _after_approval,

@@ -57,11 +57,12 @@ O servidor Ecommerce MCP usa transporte stdio e registra estas tools:
 | `get_payment_instructions` | Cria ou recupera a cobrança PIX.                |
 | `confirm_order`            | Confirma o pedido com pagamento aprovado.       |
 
-O Payment Gateway MCP registra uma tool:
+O Payment Gateway MCP registra duas tools:
 
-| Tool                | Função                                          |
-| ------------------- | ----------------------------------------------- |
-| `authorize_payment` | Autoriza um pagamento PIX através do Mini Bank. |
+| Tool                | Função                                                        |
+| ------------------- | ------------------------------------------------------------- |
+| `evaluate_payment`  | Avalia a política e informa se é necessária aprovação humana. |
+| `authorize_payment` | Autoriza um pagamento PIX através do Mini Bank.               |
 
 O método de pagamento aceito pelo checkout MCP é `pix`.
 
@@ -132,6 +133,8 @@ search_products
  -> calculate_cart
  -> create_checkout
  -> get_payment_instructions
+ -> evaluate_payment
+ -> aprovação humana (quando exigida pela política)
  -> authorize_payment
  -> confirm_order
 ```
@@ -171,7 +174,7 @@ O Ecommerce MCP grava coleções como `catalog.json`, `carts.json`, `checkouts.j
 
 O Mini Bank grava `accounts.json` em `data/mini-bank`, e o Mini Pix grava `charges.json`, `transactions.json` e `invoices.json` em `data/mini-pix`. Os caminhos podem ser substituídos pelas variáveis de ambiente correspondentes.
 
-O Payment Gateway grava `agents.json` em `data/payment-gateway`. Cada registro contém `agent_id`, `account_id`, `max_expeding_value` e `permited_categories`. Antes de encaminhar um PIX ao Mini Bank, o Gateway confirma a associação agente-conta, o limite do pagamento e as categorias permitidas. Pagamentos aprovados retornam `approved: true` e `reason`; pagamentos negados informam o motivo no erro.
+O Payment Gateway grava `agents.json` em `data/payment-gateway`. Cada registro contém `agent_id`, `account_id`, `max_expeding_value`, `permited_categories`, `require_human_approval` e `human_approval_threshold`. Quando `require_human_approval` é `true`, toda compra exige aprovação humana. `human_approval_threshold` aceita um valor numérico para exigir aprovação acima desse valor, `true` para encaminhar toda compra ao humano e `false` para bloquear a compra por padrão. Quando a compra excede `max_expeding_value` e a aprovação humana está habilitada, o gateway solicita uma exceção ao humano; com aprovação, a transação pode prosseguir. `null` mantém o comportamento automático legado, desde que as demais regras sejam válidas. A aprovação humana recebe uma pergunta explícita de sim/não, itens, total, método, PIX, motivo e o objeto completo do checkout. Antes de encaminhar um PIX ao Mini Bank, o Gateway confirma a associação agente-conta, o limite do pagamento e as categorias permitidas.
 
 No runner E2E, esses arquivos permanecem no workspace entre execuções. O log continua sendo gravado em `e2e_run.log`, salvo quando outro caminho é informado com `--log`.
 
@@ -181,6 +184,8 @@ No runner E2E, esses arquivos permanecem no workspace entre execuções. O log c
 get_payment_instructions
  -> Mini Bank POST /charges
  -> Mini Pix POST /charges
+ -> evaluate_payment
+ -> aprovação humana (quando exigida pela política)
  -> authorize_payment
  -> Mini Bank POST /payments/pix
  -> Mini Pix POST /resolve, /complete e /invoices

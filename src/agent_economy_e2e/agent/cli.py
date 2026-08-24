@@ -22,8 +22,8 @@ DEFAULT_ADDRESS = {
 
 
 def _approval_message(interruption: dict[str, Any]) -> dict[str, Any]:
+    checkout = interruption.get("checkout", {})
     return {
-        "type": "payment_approval",
         "items": [
             {
                 "name": item.get("name"),
@@ -32,9 +32,10 @@ def _approval_message(interruption: dict[str, Any]) -> dict[str, Any]:
             }
             for item in interruption.get("items", [])
         ],
-        "total": interruption["amount"],
-        "payment_method": interruption["payment_method"],
-        "pix_code": interruption["pix_code"],
+        "subtotal": checkout.get("subtotal"),
+        "shipping": checkout.get("shipping"),
+        "discount": checkout.get("discount"),
+        "total": checkout.get("total", interruption["amount"]),
     }
 
 
@@ -84,7 +85,14 @@ async def run(
                     indent=2,
                 )
             )
-            decision = input("Autorizar pagamento? [s/N] ").strip().lower() == "s"
+            reason = interruption.value.get("reason", "")
+            prompt = (
+                f"{reason[:1].upper() + reason[1:]}. " if reason else ""
+            ) + "Deseja aprovar este pagamento? [s/N] "
+            decision = input(prompt).strip().lower() in {
+                "s",
+                "sim",
+            }
             result = await graph.ainvoke(Command(resume=decision), config)
         if result.get("payment"):
             print(

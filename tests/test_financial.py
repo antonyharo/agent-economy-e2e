@@ -20,7 +20,11 @@ from agent_economy_e2e.mini_pix.app import (
     resolve_pix_code,
 )
 from agent_economy_e2e.mini_pix.app import create_app as create_pix_app
-from agent_economy_e2e.payment_gateway.app import _validate_policy, authorize_payment
+from agent_economy_e2e.payment_gateway.app import (
+    _validate_policy,
+    authorize_payment,
+    evaluate_payment,
+)
 from agent_economy_e2e.payment_gateway.server import build_server
 from tests.helpers import ADDRESS
 
@@ -108,11 +112,11 @@ def test_mini_bank_rejects_insufficient_balance(tmp_path: Path) -> None:
     assert check_balance("buyer", tmp_path).balance == Decimal("100.00")
 
 
-def test_mcp_exposes_only_expected_payment_tool() -> None:
+def test_mcp_exposes_payment_policy_and_authorization_tools() -> None:
     import asyncio
 
     tools = asyncio.run(build_server("http://127.0.0.1:8000").list_tools())
-    assert [tool.name for tool in tools] == ["authorize_payment"]
+    assert [tool.name for tool in tools] == ["evaluate_payment", "authorize_payment"]
 
 
 def test_payment_flow_uses_mini_bank_and_mini_pix_over_http(tmp_path: Path) -> None:
@@ -132,6 +136,7 @@ def test_payment_flow_uses_mini_bank_and_mini_pix_over_http(tmp_path: Path) -> N
             Decimal("25.00"),
             "reference-not-transaction",
             f"http://127.0.0.1:{bank_port}",
+            human_approved=True,
         )
         retry_invoice = authorize_payment(
             "buyer",
@@ -139,6 +144,7 @@ def test_payment_flow_uses_mini_bank_and_mini_pix_over_http(tmp_path: Path) -> N
             Decimal("25.00"),
             "another-reference",
             f"http://127.0.0.1:{bank_port}",
+            human_approved=True,
         )
         assert invoice["status"] == "COMPLETED"
         assert invoice["approved"] is True
@@ -171,6 +177,7 @@ def test_gateway_propagates_payment_decline_reason(tmp_path: Path) -> None:
                 Decimal("101.00"),
                 "checkout-declined",
                 f"http://127.0.0.1:{bank_port}",
+                human_approved=True,
             )
         assert resolve_pix_code(charge.pix_code, pix_dir).status == "FAILED"
     finally:
@@ -194,6 +201,68 @@ def test_gateway_validates_agent_account_limit_and_categories(tmp_path: Path) ->
         _validate_policy("agent-1", "buyer", Decimal("100.01"), [], tmp_path)
     with pytest.raises(ValueError, match="categoria nao permitida"):
         _validate_policy("agent-1", "buyer", Decimal("10.00"), ["calcados"], tmp_path)
+
+
+def test_gateway_preapproval_flags_control_human_approval(tmp_path: Path) -> None:
+    (tmp_path / "agents.json").write_text(
+        '[{"agent_id": "agent-1", "account_id": "buyer", '
+        '"max_expeding_value": "500.00", '
+        '"permited_categories": ["acessorios"], '
+        '"require_human_approval": false, '
+        '"human_approval_threshold": "100.00"}]',
+        encoding="utf-8",
+    )
+
+    automatic = evaluate_payment(
+        "buyer", Decimal("100.00"), "agent-1", ["acessorios"], data_dir=tmp_path
+    )
+    requires_human = evaluate_payment(
+        "buyer", Decimal("100.01"), "agent-1", ["acessorios"], data_dir=tmp_path
+    )
+    assert automatic["requires_human_approval"] is False
+    assert requires_human["requires_human_approval"] is True
+
+    (tmp_path / "agents.json").write_text(
+        '[{"agent_id": "agent-1", "account_id": "buyer", '
+        '"max_expeding_value": "500.00", '
+        '"permited_categories": ["acessorios"], '
+        '"require_human_approval": true, '
+        '"human_approval_threshold": null}]',
+        encoding="utf-8",
+    )
+    always_requires_human = evaluate_payment(
+        "buyer", Decimal("10.00"), "agent-1", ["acessorios"], data_dir=tmp_path
+    )
+    assert always_requires_human["requires_human_approval"] is True
+
+    (tmp_path / "agents.json").write_text(
+        '[{"agent_id": "agent-1", "account_id": "buyer", '
+        '"max_expeding_value": "500.00", '
+        '"permited_categories": ["acessorios"], '
+        '"human_approval_threshold": false}]',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="pre-aprovacao humana desabilitada"):
+        evaluate_payment(
+            "buyer", Decimal("10.00"), "agent-1", ["acessorios"], data_dir=tmp_path
+        )
+
+
+def test_gateway_sends_over_limit_payment_to_human_when_enabled(tmp_path: Path) -> None:
+    (tmp_path / "agents.json").write_text(
+        '[{"agent_id": "agent-1", "account_id": "buyer", '
+        '"max_expeding_value": "900.00", '
+        '"permited_categories": ["acessorios"], '
+        '"human_approval_threshold": true}]',
+        encoding="utf-8",
+    )
+
+    policy = evaluate_payment(
+        "buyer", Decimal("1000.00"), "agent-1", ["acessorios"], data_dir=tmp_path
+    )
+
+    assert policy["requires_human_approval"] is True
+    assert "excede o limite de 900.00" in policy["reason"]
 
 
 def test_ecommerce_financial_mcp_flow(tmp_path: Path) -> None:
@@ -229,6 +298,7 @@ def test_ecommerce_financial_mcp_flow(tmp_path: Path) -> None:
             Decimal(str(checkout.total)),
             checkout.checkout_id,
             f"http://127.0.0.1:{bank_port}",
+            human_approved=True,
         )
         assert invoice["status"] == "COMPLETED"
         assert invoice["amount"] == "109.90"

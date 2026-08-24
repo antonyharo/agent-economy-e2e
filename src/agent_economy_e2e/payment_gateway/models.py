@@ -14,6 +14,7 @@ class AuthorizePaymentRequest(BaseModel):
     reference_id: str = Field(min_length=1)
     category: str | None = None
     categories: list[str] = Field(default_factory=list)
+    human_approved: bool = False
     currency: Literal["BRL"] = "BRL"
 
     @field_validator("amount")

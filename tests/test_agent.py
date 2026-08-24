@@ -9,6 +9,7 @@ from agent_economy_e2e.agent.graph import (
     _nodes,
     _requested_quantity,
     _search_terms,
+    PurchaseState,
 )
 
 
@@ -28,7 +29,11 @@ class PlannedModel:
             {
                 "model_dump": lambda self: {
                     "items": [
-                        {"product_query": "mochila urban", "quantity": 2, "variant_id": None},
+                        {
+                            "product_query": "mochila urban",
+                            "quantity": 2,
+                            "variant_id": None,
+                        },
                         {"product_query": "tenis x", "quantity": 2, "variant_id": None},
                     ],
                     "product_query": "",
@@ -96,6 +101,13 @@ def test_authorize_payment_returns_structured_business_error() -> None:
     assert _after_authorize_payment(result) == "__end__"
 
 
+def test_purchase_state_keeps_payment_policy_for_human_approval() -> None:
+    state_fields = PurchaseState.__annotations__
+
+    assert "payment_policy" in state_fields
+    assert "human_approved" in state_fields
+
+
 def test_product_query_removes_purchase_details_before_catalog_search() -> None:
     assert _clean_product_query("Compre dois Tenis X tamanho 42") == "Tenis X"
     assert _clean_product_query("Compre duas mochilas urban") == "mochilas urban"
@@ -135,7 +147,11 @@ def test_add_to_cart_adds_each_planned_product() -> None:
         nodes["add_to_cart"](
             {
                 "resolved_items": [
-                    {"product_id": "prod_mochila_urban", "quantity": 2, "variant_id": None},
+                    {
+                        "product_id": "prod_mochila_urban",
+                        "quantity": 2,
+                        "variant_id": None,
+                    },
                     {"product_id": "prod_tenis_x", "quantity": 2, "variant_id": None},
                 ]
             }
@@ -154,14 +170,16 @@ def test_public_payment_messages_are_compact() -> None:
             "amount": 819.9,
             "payment_method": "pix",
             "pix_code": "PIX-123",
+            "checkout": {"checkout_id": "chk-123", "total": 819.9},
+            "reason": "pre-aprovacao humana obrigatoria",
         }
     )
     assert approval == {
-        "type": "payment_approval",
         "items": [{"name": "Tenis X", "quantity": 1, "unit_price": 799.9}],
+        "subtotal": None,
+        "shipping": None,
+        "discount": None,
         "total": 819.9,
-        "payment_method": "pix",
-        "pix_code": "PIX-123",
     }
 
     assert cli._public_result(
